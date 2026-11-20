@@ -29,3 +29,15 @@ export type {
 } from './core/domain/ArticleDetector.js';
 export type { BlockRef, Segment, TextSpan } from './core/domain/Segment.js';
 export { MinWords } from './core/domain/value-objects/MinWords.js';
+export { Article, DEFAULT_WPM, MAX_ARTICLE_CHARS } from './core/domain/Article.js';
+export type {
+  ArticleSource,
+  BlockRole,
+  ContentBlock,
+  ExtractedArticle,
+} from './core/domain/outbound/index.js';
+export { DetectArticle, DEFAULT_MIN_WORDS } from './core/application/DetectArticle.use-case.js';
+export type {
+  DetectArticleInput,
+  DetectArticleOutput,
+} from './core/application/DetectArticle.use-case.js';

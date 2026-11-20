@@ -1,6 +1,5 @@
 # Handoff
 
-- Issue #8 (T-012) hecho: `src/infrastructure/dom/DomArticleSource.ts` (+ spec con jsdom y `fixtures/blog.html`). API: `candidates(explicitId?)` → `ArticleCandidate[]` para `ArticleDetector`; `extract(candidateId)` → `{title, language, blocks[{ref,role,text}], wordCount}`; `resolve(ref)` → `Element | undefined` (WeakRef). Exclusiones RN-02 + publicidad (tokens de class/id, `data-ad*`, ins/iframe) + invisibles por `getComputedStyle`.
-- `libs/reader/src/index.ts` ahora exporta `ArticleDetector`, `MinWords`, tipos de detección y `BlockRef/Segment/TextSpan`. Devdeps nuevas: jest-environment-jsdom@29, @types/jsdom, @types/node; tsconfig `types` incluye `node`. Specs DOM usan `@jest-environment jsdom` en el docblock.
-- `pnpm verify` verde (217 tests).
-- Siguiente paso: T-015 (`DetectArticle.use-case` + duración estimada) usando DomArticleSource, y T-022. #9 y #10 ya planeados.
+- Issue #11 (T-015) hecho: puerto `ArticleSource` (`core/domain/outbound/ArticleSource.port.ts`, tipos ContentBlock/ExtractedArticle; DomArticleSource lo cumple estructuralmente), entidad `Article` (truncado RN-12, `estimatedDuration(rate, wpm)`, DEFAULT_WPM=150) y `DetectArticle` en `core/application/DetectArticle.use-case.ts` (lanza ResourceNotFoundError AV_ARTICLE_NOT_FOUND, DomainValidationError AV_ARTICLE_TOO_SHORT / AV_UNSUPPORTED_LANGUAGE; aviso AV_INPUT_TOO_LARGE en `warnings`). Exportado en `libs/reader/src/index.ts`.
+- `pnpm verify` verde (225 tests).
+- Siguiente paso: T-022 (reproducción/PlayNarration) y conectar DetectArticle con createCore; #9 y #10 ya planeados. Pendiente: wpm por voz aún es parámetro, sin dato de voz real; DomArticleSource aún define sus propios tipos ContentBlock (duplicados con el puerto).
