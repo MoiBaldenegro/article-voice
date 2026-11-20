@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <title>Blog de prueba</title>
+    <style>
+      .oculto {
+        display: none;
+      }
+    </style>
+    <script>
+      var x = 'no leer esto';
+    </script>
+  </head>
+  <body>
+    <header><a href="/">Inicio</a> <a href="/blog">Blog</a></header>
+    <nav>
+      <ul>
+        <li><a href="/a">Menú uno</a></li>
+        <li><a href="/b">Menú dos</a></li>
+      </ul>
+    </nav>
+    <div class="ad-slot">Compra ya nuestro producto patrocinado</div>
+    <main>
+      <article>
+        <h1>Cómo cuidar un huerto urbano</h1>
+        <p>
+          Un huerto urbano necesita luz, agua y paciencia. Con <a href="/tierra">buena tierra</a>
+          todo crece mejor.
+        </p>
+        <aside>Artículos relacionados: otro texto que no se lee.</aside>
+        <p>Riega por la mañana.<br />Evita mojar las hojas.</p>
+        <p hidden>Párrafo con atributo hidden.</p>
+        <p aria-hidden="true">Párrafo aria oculto.</p>
+        <p data-av-skip>Párrafo marcado para omitir.</p>
+        <p class="oculto">Párrafo oculto por CSS.</p>
+        <pre>const codigo = "bloque";</pre>
+        <figure>
+          <img src="x.png" alt="" />
+          <figcaption>Pie de foto excluido</figcaption>
+        </figure>
+        <ul>
+          <li>Primer consejo</li>
+          <li>Segundo consejo con <code>inline</code> dentro</li>
+        </ul>
+        <blockquote>La paciencia es la madre de la cosecha.</blockquote>
+        <script>
+          console.log('x');
+        </script>
+        <div class="advertisement">Publicidad dentro del artículo</div>
+        <form>
+          <label>Suscríbete</label>
+          <button>Enviar</button>
+        </form>
+      </article>
+    </main>
+    <footer>Pie de página con derechos reservados</footer>
+  </body>
+</html>

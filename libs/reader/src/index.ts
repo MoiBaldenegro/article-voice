@@ -20,3 +20,12 @@ export type {
 } from './core/domain/outbound/index.js';
 export { createCore } from './reader-core.js';
 export type { Core, CoreOptions } from './reader-core.js';
+export { ArticleDetector, densityScore } from './core/domain/ArticleDetector.js';
+export type {
+  ArticleCandidate,
+  DetectInput,
+  DetectionResult,
+  DetectionRule,
+} from './core/domain/ArticleDetector.js';
+export type { BlockRef, Segment, TextSpan } from './core/domain/Segment.js';
+export { MinWords } from './core/domain/value-objects/MinWords.js';
