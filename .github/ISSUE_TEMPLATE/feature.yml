@@ -1,0 +1,24 @@
+name: Propuesta de funcionalidad
+description: Una capacidad nueva o un cambio de comportamiento
+labels: ["type:feature", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: "Revisa antes la sección *Qué NO es* de docs/01-producto/vision.md. Si cambia la API pública, probablemente haga falta un RFC."
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema
+      description: Qué intentas lograr y por qué hoy no puedes
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Cómo te gustaría usarlo
+      description: Ejemplo de código como quedaría en el README
+      render: ts
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas que consideraste

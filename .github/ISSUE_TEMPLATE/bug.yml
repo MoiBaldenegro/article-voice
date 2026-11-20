@@ -1,0 +1,36 @@
+name: Reporte de bug
+description: Algo no funciona como dice la documentación
+labels: ["type:bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: "¿Es una vulnerabilidad? No la reportes aquí: usa Security → Report a vulnerability."
+  - type: input
+    id: version
+    attributes:
+      label: Versión del paquete
+      placeholder: 1.2.3
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Entorno
+      description: Navegador y versión, sistema operativo, framework (o HTML sin bundler), motor (`activeEngine`)
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Cómo reproducirlo
+      description: Código mínimo que muestre el problema
+      render: ts
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Qué esperabas y qué pasó
+      description: Incluye el `code` del error si hubo uno
+    validations:
+      required: true

@@ -1,0 +1,13 @@
+article-voice
+Copyright (c) 2026 Moises Baldenegro Melendez
+Licensed under the MIT License (see LICENSE).
+
+This product uses and adapts work from MOSS-TTS-Nano
+(https://github.com/OpenMOSS/MOSS-TTS-Nano),
+Copyright 2026 OpenMOSS Team, Fudan University, SII and MOSI,
+licensed under the Apache License, Version 2.0
+(http://www.apache.org/licenses/LICENSE-2.0).
+
+Source files ported from MOSS-TTS-Nano carry a header naming the original
+file and describing the changes. Model weights are downloaded at runtime from
+their original repository and are not redistributed in this package.
