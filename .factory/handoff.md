@@ -1,5 +1,6 @@
 # Handoff
 
-- Hecho (constructor, issue #3): intento del informe T-000. No se pudo ejecutar: faltan los pesos de MOSS-TTS-Nano (no están en el repo) y las mediciones requieren Chrome real con WebGPU. Terminó como needs-human; no se escribió informe ni se tocó ADR-0018.
-- Estado: sin cambios de código. Los issues #4–#9 siguen abiertos.
-- Siguiente paso: una persona descarga los pesos, corre `spikes/t000-moss-browser` (reference.py, node-parity.ts, bench-browser.ts) en Chrome con WebGPU y aporta los números; con ellos se redacta `docs/03-arquitectura/spikes/T-000-informe.md` (directorio aún no existe) y se acepta ADR-0018.
+- Hecho (constructor, issue #4 / T-010): VOs en `libs/reader/src/core/domain/value-objects/`: `PlaybackRate`, `MinWords`, `VoiceId`, `EngineKind`, `HttpsUrl`, `Language` (+ `invalid-option.ts`, `index.ts`, `value-objects.spec.ts`). Fábricas `of()`/`from()`; errores `AV_INVALID_OPTION` (y `AV_UNSUPPORTED_LANGUAGE` en Language) vía `DomainValidationError`.
+- Estado: código y tests escritos, pero NO pude ejecutar `pnpm verify` (la sesión negó ejecutar comandos). Puede haber fallos de prettier/typecheck/lint sin detectar; correr `pnpm prettier --write libs && pnpm verify` primero.
+- Supuesto a validar: la lista de 20 idiomas en `Language.ts` (`SUPPORTED_LANGUAGES`) es de memoria; no está en docs. Contrastar con MOSS-TTS-Nano / informe T-000.
+- Siguiente paso: correr `pnpm verify`, corregir lo que salga, y luego seguir con #5 (T-011) u otros issues abiertos.
