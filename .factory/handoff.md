@@ -1,6 +1,6 @@
 # Handoff
 
-- Issue #15 (T-051) hecho: `src/infrastructure/engines/MossServerEngine.ts` (+ spec con servidor HTTP falso real). POST `{serverUrl}/v1/audio/speech`, `response_format: pcm` (PCM16 LE mono, 48 kHz por defecto) en streaming, cancelación con AbortSignal/dispose (AV_ABORTED), AV_SERVER_ERROR con `details.status` (sin status en caída de red), `redirect: 'error'` y `credentials: 'omit'`. Pasa `speechEngineContract`.
-- Exporté `VoiceId`, `EngineKind`, `HttpsUrl` desde `libs/reader/src/index.ts` (regenerado `etc/article-voice.api.md`). eslint: las specs de infrastructure pueden importar `core/domain/outbound/testing`.
+- Issue #16 (T-050) hecho. `src/infrastructure/engines/WebSpeechEngine.ts`: motor sobre `speechSynthesis` inyectable (`SpeechSynthesisLike`); `synthesize` habla el texto y al terminar entrega UN chunk de silencio (el navegador no expone el PCM de la voz del sistema). Voces → ids slug `[a-z0-9-]`, filtradas por `language` si hay coincidencias; espera `voiceschanged`. Pasa `speechEngineContract`.
+- `libs/reader/src/core/application/SelectEngine.use-case.ts` (CU-06): `auto` = moss-server si hay `serverUrl` y el `probe` inyectado responde; si no, web-speech con `fallback: true`, `label: 'voz del sistema'` y callback `onFallback(FallbackEvent)`; `fallback: 'none'` o sin voz del sistema → AV_ENGINE_UNAVAILABLE; nunca elige moss-browser salvo `engine` explícito. Exportado en `index.ts` (api.md regenerado).
 - `pnpm verify` y `pnpm api:check` verdes.
-- Siguiente paso: T-050 (#16, web-speech) y el selector de motor (`auto`) que cablee MossServerEngine con `server-url`; la voz/voces de `moss-server` se pasan por opción `voices` (no hay endpoint de voces).
+- Siguiente paso: cablear SelectEngine + engines + PlayNarration en el componente (la UI debe mostrar la etiqueta y re-emitir el evento de respaldo como CustomEvent), y un `probe` HTTP real para `server-url` (aún no existe).

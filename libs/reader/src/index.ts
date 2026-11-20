@@ -44,3 +44,11 @@ export type {
 export { VoiceId } from './core/domain/value-objects/VoiceId.js';
 export { EngineKind } from './core/domain/value-objects/EngineKind.js';
 export { HttpsUrl } from './core/domain/value-objects/HttpsUrl.js';
+export { SelectEngine, SYSTEM_VOICE_LABEL } from './core/application/SelectEngine.use-case.js';
+export type {
+  FallbackEvent,
+  FallbackReason,
+  SelectEngineInput,
+  SelectEngineOutput,
+  ServerProbe,
+} from './core/application/SelectEngine.use-case.js';

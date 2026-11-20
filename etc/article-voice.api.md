@@ -230,6 +230,21 @@ export interface ExtractedArticle {
     readonly wordCount: number;
 }
 
+// @public (undocumented)
+export interface FallbackEvent {
+    // (undocumented)
+    readonly from: 'moss-server' | 'auto';
+    // (undocumented)
+    readonly label: typeof SYSTEM_VOICE_LABEL;
+    // (undocumented)
+    readonly reason: FallbackReason;
+    // (undocumented)
+    readonly to: 'web-speech';
+}
+
+// @public (undocumented)
+export type FallbackReason = 'no-server-url' | 'server-unreachable';
+
 // @public
 export class HttpsUrl extends ValueObject<{
     value: string;
@@ -356,6 +371,33 @@ export interface Segment {
 }
 
 // @public (undocumented)
+export class SelectEngine {
+    constructor(capabilities: DeviceCapabilities, probe: ServerProbe, onFallback?: (event: FallbackEvent) => void);
+    // (undocumented)
+    execute(input?: SelectEngineInput, signal?: AbortSignal): Promise<SelectEngineOutput>;
+}
+
+// @public (undocumented)
+export interface SelectEngineInput {
+    // (undocumented)
+    readonly engine?: EngineKind;
+    readonly fallback?: 'web-speech' | 'none';
+    // (undocumented)
+    readonly serverUrl?: string | undefined;
+}
+
+// @public (undocumented)
+export interface SelectEngineOutput {
+    readonly fallback: boolean;
+    // (undocumented)
+    readonly kind: Exclude<EngineKindValue, 'auto'>;
+    readonly label?: typeof SYSTEM_VOICE_LABEL;
+}
+
+// @public
+export type ServerProbe = (serverUrl: string, signal?: AbortSignal) => Promise<boolean>;
+
+// @public (undocumented)
 export interface SpeechEngine {
     // (undocumented)
     dispose(): void;
@@ -365,6 +407,9 @@ export interface SpeechEngine {
     synthesize(text: string, voice: VoiceId, signal?: AbortSignal): AsyncIterable<AudioChunk>;
     voices(): readonly VoiceId[];
 }
+
+// @public (undocumented)
+export const SYSTEM_VOICE_LABEL = "voz del sistema";
 
 // @public
 export interface TextSpan {
