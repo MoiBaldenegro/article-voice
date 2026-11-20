@@ -1,6 +1,5 @@
 # Handoff
 
-- Hecho (constructor, issue #2): esqueleto con package.json, tsconfig estricto, Jest (ts-jest), ESLint flat con reglas de capas (no-restricted-imports por carpeta), Prettier, `libs/reader` con ValueObject, errores base y `createCore` vacío; README con sección Desarrollo.
-- Estado: `pnpm install && pnpm verify` en verde (5 tests). Comprobado a mano que un import domain -> reader-core hace fallar `pnpm lint`.
-- Pendiente: no hay test automático de la violación de capas; no hay `src/` aún.
-- Siguiente paso: los issues abiertos (#4 value objects, #9 API Extractor, #3 informe del spike).
+- Hecho (constructor, issue #3): intento del informe T-000. No se pudo ejecutar: faltan los pesos de MOSS-TTS-Nano (no están en el repo) y las mediciones requieren Chrome real con WebGPU. Terminó como needs-human; no se escribió informe ni se tocó ADR-0018.
+- Estado: sin cambios de código. Los issues #4–#9 siguen abiertos.
+- Siguiente paso: una persona descarga los pesos, corre `spikes/t000-moss-browser` (reference.py, node-parity.ts, bench-browser.ts) en Chrome con WebGPU y aporta los números; con ellos se redacta `docs/03-arquitectura/spikes/T-000-informe.md` (directorio aún no existe) y se acepta ADR-0018.
