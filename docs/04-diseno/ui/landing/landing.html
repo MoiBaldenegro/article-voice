@@ -1,0 +1,492 @@
+<title>article-voice</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Componente web que detecta el artículo de la página y lo lee en voz alta con MOSS-TTS-Nano, en el navegador del visitante.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Landing del proyecto. Tokens: design system MXVI v1.1, solo tema oscuro.
+   Layout: columna editorial de 1080px; el héroe es la demo viva del componente sobre un artículo. */
+:root {
+  color-scheme: dark;
+  --color-background: #070716;
+  --color-surface: #101018;
+  --color-surface-raised: #15151f;
+  --color-text: #ffffff;
+  --color-text-secondary: #b8b8c5;
+  --color-text-muted: #8a8a9a;
+  --color-border: rgba(255, 255, 255, .08);
+  --color-border-strong: rgba(255, 255, 255, .15);
+  --color-accent: #B37AC2;
+  --color-accent-hover: #C396CF;
+  --color-accent-wash: rgba(179, 122, 194, .16);
+  --color-success: #39C98A;
+  --color-danger: #F05B72;
+  --font-display: "Geist Pixel", "Geist Mono", ui-monospace, monospace;
+  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+  --gap: 14px;
+  --radius-square: 0;
+  --shadow-card-rest: 0 1px 0 rgba(255,255,255,.04) inset, 0 12px 28px -18px rgba(0,0,0,.8);
+  --shadow-card-hover: 0 1px 0 rgba(255,255,255,.06) inset, 0 18px 40px -20px rgba(179,122,194,.35);
+  --transition-default: .28s cubic-bezier(.2,.8,.2,1);
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--color-background); color: var(--color-text);
+  font: 400 16px/1.6 var(--font-sans); -webkit-font-smoothing: antialiased;
+}
+a { color: var(--color-accent); text-decoration: none; }
+a:hover { color: var(--color-accent-hover); }
+:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.label { font: 500 12px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--color-text-muted); }
+.mono { font-family: var(--font-mono); }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+h2 { font: 500 clamp(26px, 3.4vw, 34px)/1.15 var(--font-display); letter-spacing: -.01em; }
+h3 { font: 600 17px/1.3 var(--font-sans); }
+p { margin: 0; }
+.muted { color: var(--color-text-secondary); }
+
+/* Cabecera */
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--color-background); }
+header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: rgba(7,7,22,.86); backdrop-filter: blur(10px); border-bottom: 1px solid var(--color-border); }
+header.top .wrap { display: flex; align-items: center; gap: 28px; padding-block: 14px; }
+.brand { display: flex; align-items: center; gap: 10px; font: 500 15px/1 var(--font-mono); color: var(--color-text); }
+.brand-mark { width: 22px; height: 22px; display: grid; grid-template-columns: repeat(5, 1fr); align-items: end; gap: 2px; }
+.brand-mark i { display: block; background: var(--color-accent); }
+.brand-mark i:nth-child(1) { height: 30%; } .brand-mark i:nth-child(2) { height: 75%; } .brand-mark i:nth-child(3) { height: 100%; } .brand-mark i:nth-child(4) { height: 55%; } .brand-mark i:nth-child(5) { height: 25%; }
+nav.links { display: flex; gap: 22px; margin-left: auto; font-size: 14px; }
+nav.links a { color: var(--color-text-secondary); }
+nav.links a:hover { color: var(--color-text); }
+@media (max-width: 640px) { nav.links a:not(.gh) { display: none; } }
+
+/* Botones (el acento es señal, no relleno) */
+.btn { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 18px; border: 1px solid var(--color-border-strong); background: var(--color-surface); color: var(--color-text); font: 500 14px/1 var(--font-sans); cursor: pointer; transition: border-color var(--transition-default), color var(--transition-default), transform var(--transition-default); border-radius: var(--radius-square); }
+.btn:hover { border-color: var(--color-accent); color: var(--color-text); transform: translateY(-2px); }
+.btn--accent { border-color: var(--color-accent); }
+.btn--accent .dot { width: 8px; height: 8px; background: var(--color-accent); }
+.btn--quiet { background: transparent; }
+
+/* Héroe */
+.hero { padding-block: 70px 56px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 56px; align-items: start; }
+@media (max-width: 900px) { .hero { grid-template-columns: 1fr; gap: 42px; padding-block: 42px; } }
+.hero h1 { font: 500 clamp(36px, 5.2vw, 58px)/1.04 var(--font-display); letter-spacing: -.02em; margin-top: 18px; }
+.hero h1 em { font-style: normal; color: var(--color-accent); }
+.hero .lede { margin-top: 21px; font-size: 18px; color: var(--color-text-secondary); max-width: 34em; }
+.hero .ctas { display: flex; flex-wrap: wrap; gap: var(--gap); margin-top: 28px; }
+.snippet { margin-top: 28px; border: 1px solid var(--color-border); background: var(--color-surface); }
+.snippet-head { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--color-border); }
+.snippet pre { margin: 0; padding: 14px; overflow-x: auto; font: 400 13px/1.7 var(--font-mono); color: var(--color-text-secondary); }
+.snippet .tag { color: var(--color-accent-hover); } .snippet .attr { color: var(--color-text); } .snippet .str { color: var(--color-success); }
+.copy { background: none; border: 0; color: var(--color-text-muted); font: 500 12px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; cursor: pointer; min-height: 32px; padding: 0 4px; }
+.copy:hover { color: var(--color-text); }
+
+/* Demo: artículo + reproductor */
+.demo { border: 1px solid var(--color-border); background: var(--color-surface); box-shadow: var(--shadow-card-rest); }
+.demo-bar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--color-border); }
+.demo-bar span.url { font: 400 12px/1 var(--font-mono); color: var(--color-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.demo-bar i { width: 8px; height: 8px; border: 1px solid var(--color-border-strong); }
+.demo-body { padding: 28px; display: grid; gap: 21px; }
+@media (max-width: 480px) { .demo-body { padding: 21px 16px; } }
+.kicker { font: 500 12px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--color-accent); }
+.demo-body h3.art-title { font: 600 24px/1.2 var(--font-sans); letter-spacing: -.01em; }
+.byline { font-size: 13px; color: var(--color-text-muted); }
+.art-text { display: grid; gap: 14px; color: var(--color-text-secondary); font-size: 15.5px; line-height: 1.75; }
+.art-text .s { transition: background-color var(--transition-default), color var(--transition-default); padding: 1px 0; }
+.art-text .s.now { background: var(--color-accent-wash); color: var(--color-text); box-shadow: 0 2px 0 var(--color-accent); }
+.art-text .s.done { color: var(--color-text-muted); }
+
+/* El componente <article-voice> tal como se vería */
+.av { border: 1px solid var(--color-border-strong); background: var(--color-background); display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--gap); padding: 10px 14px 10px 10px; position: relative; }
+.av-play { width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid var(--color-accent); background: var(--color-surface); color: var(--color-text); cursor: pointer; transition: background-color var(--transition-default); border-radius: 0; }
+.av-play:hover { background: var(--color-accent-wash); }
+.av-play svg { width: 16px; height: 16px; fill: currentColor; }
+.av-main { min-width: 0; display: grid; gap: 7px; }
+.av-line { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; font-size: 14px; }
+.av-line strong { font-weight: 500; }
+.av-meta { font: 400 12px/1 var(--font-mono); color: var(--color-text-muted); }
+.av-progress { height: 2px; background: var(--color-border-strong); position: relative; overflow: hidden; }
+.av-progress b { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--color-accent); transition: width .4s linear; }
+.av-side { display: flex; align-items: center; gap: 7px; }
+.chip { font: 500 11px/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--color-text-secondary); border: 1px solid var(--color-border-strong); padding: 6px 7px; white-space: nowrap; }
+.chip.ok { color: var(--color-success); border-color: rgba(57,201,138,.4); }
+.rate { background: none; border: 1px solid var(--color-border-strong); color: var(--color-text); font: 500 12px/1 var(--font-mono); min-width: 44px; min-height: 32px; cursor: pointer; border-radius: 0; }
+.rate:hover { border-color: var(--color-accent); }
+.wave { display: flex; align-items: center; gap: 2px; height: 16px; }
+.wave i { width: 2px; height: 30%; background: var(--color-accent); }
+.av.playing .wave i { animation: wv 1s ease-in-out infinite; }
+.wave i:nth-child(2) { animation-delay: -.2s; } .wave i:nth-child(3) { animation-delay: -.5s; } .wave i:nth-child(4) { animation-delay: -.7s; } .wave i:nth-child(5) { animation-delay: -.35s; }
+@keyframes wv { 0%,100% { height: 25%; } 50% { height: 100%; } }
+.av-confirm { grid-column: 1 / -1; border-top: 1px solid var(--color-border); padding-top: 12px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; font-size: 13px; color: var(--color-text-secondary); }
+.av-confirm .row { display: flex; gap: 8px; }
+.btn.sm { min-height: 36px; padding: 0 12px; font-size: 13px; }
+@media (max-width: 480px) { .av { grid-template-columns: auto minmax(0, 1fr); } .av-side { grid-column: 1 / -1; justify-content: flex-start; } }
+.demo-note { font-size: 12px; color: var(--color-text-muted); padding: 0 28px 21px; }
+.states { display: flex; flex-wrap: wrap; gap: 7px; padding: 0 28px 24px; }
+.states button { background: none; border: 1px solid var(--color-border); color: var(--color-text-muted); font: 500 11px/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; padding: 8px 9px; cursor: pointer; border-radius: 0; min-height: 32px; }
+.states button[aria-pressed="true"] { color: var(--color-text); border-color: var(--color-accent); }
+
+/* Secciones */
+section.band { border-top: 1px solid var(--color-border); padding-block: 70px; }
+@media (max-width: 640px) { section.band { padding-block: 49px; } }
+.sec-head { display: grid; gap: 14px; max-width: 40em; margin-bottom: 42px; }
+.pipeline { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--color-border); }
+@media (max-width: 860px) { .pipeline { grid-template-columns: 1fr; } }
+.step { padding: 28px; display: grid; gap: 14px; align-content: start; border-right: 1px solid var(--color-border); min-width: 0; }
+.step:last-child { border-right: 0; }
+@media (max-width: 860px) { .step { border-right: 0; border-bottom: 1px solid var(--color-border); } .step:last-child { border-bottom: 0; } }
+.step .n { font: 500 13px/1 var(--font-mono); color: var(--color-accent); }
+.specimen { border: 1px solid var(--color-border); background: var(--color-background); padding: 12px 14px; font: 400 13px/1.6 var(--font-mono); color: var(--color-text-secondary); overflow-x: auto; }
+.specimen .from { color: var(--color-text-muted); text-decoration: line-through; text-decoration-color: rgba(240,91,114,.6); }
+.specimen .to { color: var(--color-text); }
+.specimen .seg { display: inline-block; border: 1px dashed var(--color-border-strong); padding: 0 5px; margin: 2px 0; }
+.frames { display: flex; gap: 2px; align-items: end; height: 34px; }
+.frames i { flex: 1; background: var(--color-accent); opacity: .85; }
+
+.engines { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 640px; }
+.table-scroll { overflow-x: auto; border: 1px solid var(--color-border); }
+.engines th, .engines td { text-align: left; padding: 14px; border-bottom: 1px solid var(--color-border); vertical-align: top; }
+.engines thead th { font: 500 11px/1.3 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--color-text-muted); background: var(--color-surface); }
+.engines tbody tr:last-child td { border-bottom: 0; }
+.engines td:first-child { font-family: var(--font-mono); color: var(--color-text); white-space: nowrap; }
+.engines .yes { color: var(--color-success); } .engines .no { color: var(--color-danger); }
+
+.tabs { display: flex; flex-wrap: wrap; border: 1px solid var(--color-border); border-bottom: 0; background: var(--color-surface); }
+.tabs button { background: none; border: 0; border-right: 1px solid var(--color-border); color: var(--color-text-secondary); font: 500 13px/1 var(--font-mono); padding: 0 16px; min-height: 44px; cursor: pointer; border-radius: 0; }
+.tabs button[aria-selected="true"] { color: var(--color-text); box-shadow: inset 0 -2px 0 var(--color-accent); }
+.tabpanel { border: 1px solid var(--color-border); background: var(--color-background); }
+.tabpanel pre { margin: 0; padding: 21px; overflow-x: auto; font: 400 13.5px/1.7 var(--font-mono); color: var(--color-text-secondary); }
+
+.principles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--color-border); }
+@media (max-width: 720px) { .principles { grid-template-columns: 1fr; } }
+.principle { padding: 24px 28px 24px 0; border-bottom: 1px solid var(--color-border); display: grid; gap: 7px; }
+.principle:nth-child(odd) { padding-right: 42px; }
+.principle:nth-child(even) { padding-left: 28px; border-left: 1px solid var(--color-border); }
+@media (max-width: 720px) { .principle:nth-child(even) { padding-left: 0; border-left: 0; } }
+
+.status { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 42px; }
+@media (max-width: 860px) { .status { grid-template-columns: 1fr; } }
+.measures { display: grid; border: 1px solid var(--color-border); }
+.measure { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; padding: 14px 18px; border-bottom: 1px solid var(--color-border); align-items: baseline; }
+.measure:last-child { border-bottom: 0; }
+.measure .v { font: 500 15px/1 var(--font-mono); font-variant-numeric: tabular-nums; }
+.measure .v.ok { color: var(--color-success); } .measure .v.warn { color: var(--color-accent-hover); }
+.roadmap { list-style: none; margin: 0; padding: 0; display: grid; }
+.roadmap li { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--color-border); font-size: 14px; }
+.roadmap li .when { font: 500 12px/1.6 var(--font-mono); color: var(--color-text-muted); }
+.roadmap li.now .when { color: var(--color-accent); }
+
+details.faq { border-bottom: 1px solid var(--color-border); }
+details.faq summary { cursor: pointer; padding: 18px 0; font-weight: 500; list-style: none; display: flex; justify-content: space-between; gap: 14px; }
+details.faq summary::after { content: "+"; font-family: var(--font-mono); color: var(--color-accent); }
+details.faq[open] summary::after { content: "–"; }
+details.faq p { padding-bottom: 18px; color: var(--color-text-secondary); max-width: 62ch; }
+.faqs { border-top: 1px solid var(--color-border); max-width: 760px; }
+
+footer { border-top: 1px solid var(--color-border); padding-block: 42px 56px; font-size: 13px; color: var(--color-text-muted); }
+footer .wrap { display: grid; gap: 14px; }
+footer .row { display: flex; flex-wrap: wrap; gap: 21px; justify-content: space-between; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#inicio" aria-label="article-voice, inicio"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>article-voice</a>
+    <nav class="links" aria-label="Principal">
+      <a href="#como-funciona">Cómo funciona</a>
+      <a href="#integrar">Integrar</a>
+      <a href="#estado">Estado</a>
+      <a class="gh" href="https://github.com/MoiBaldenegro/article-voice">GitHub ↗</a>
+    </nav>
+  </div>
+</header>
+
+<main id="inicio">
+  <div class="wrap hero">
+    <div>
+      <span class="label">Componente web · código abierto · MIT</span>
+      <h1>Que cualquier artículo se pueda <em>escuchar</em>.</h1>
+      <p class="lede">Una etiqueta encuentra el artículo de tu página y lo lee en voz alta con MOSS-TTS-Nano, una voz neuronal que corre en el navegador de quien te lee. Sin servidores, sin costo por palabra y con cualquier framework.</p>
+      <div class="ctas">
+        <a class="btn btn--accent" href="#demo"><span class="dot" aria-hidden="true"></span>Escuchar la demo</a>
+        <a class="btn btn--quiet" href="https://github.com/MoiBaldenegro/article-voice">Ver el código</a>
+      </div>
+      <div class="snippet">
+        <div class="snippet-head"><span class="label">Instalar en cualquier página</span><button class="copy" id="copy-snippet" type="button">Copiar</button></div>
+<pre id="snippet-code"><span class="tag">&lt;script</span> <span class="attr">type</span>=<span class="str">"module"</span>
+  <span class="attr">src</span>=<span class="str">"https://cdn.jsdelivr.net/npm/article-voice@1/dist/cdn/article-voice.js"</span><span class="tag">&gt;&lt;/script&gt;</span>
+
+<span class="tag">&lt;article-voice&gt;&lt;/article-voice&gt;</span></pre>
+      </div>
+    </div>
+
+    <div id="demo">
+      <div class="demo" aria-label="Demostración del componente sobre un artículo de ejemplo">
+        <div class="demo-bar"><i></i><i></i><i></i><span class="url">tu-blog.com/notas/la-radio-en-casa</span></div>
+        <div class="demo-body">
+          <div>
+            <div class="kicker">Notas · Tecnología</div>
+          </div>
+          <h3 class="art-title">La radio volvió a casa, ahora dentro del navegador</h3>
+          <div class="byline">Por Lucía Ramos · 20 de noviembre de 2026</div>
+
+          <div class="av" id="av" role="group" aria-label="Escuchar este artículo">
+            <button class="av-play" id="av-play" type="button" aria-label="Escuchar el artículo">
+              <svg viewBox="0 0 16 16" aria-hidden="true" id="av-icon"><path d="M3 1.5v13l11-6.5z"/></svg>
+            </button>
+            <div class="av-main">
+              <div class="av-line"><strong id="av-title">Escuchar</strong><span class="av-meta" id="av-meta">2 min · español</span></div>
+              <div class="av-progress" aria-hidden="true"><b id="av-bar"></b></div>
+            </div>
+            <div class="av-side">
+              <span class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+              <span class="chip" id="av-engine">moss · webgpu</span>
+              <button class="rate" id="av-rate" type="button" aria-label="Velocidad de lectura">1×</button>
+            </div>
+            <div class="av-confirm" id="av-confirm" hidden>
+              <span>La voz se descarga una sola vez y se guarda en este navegador. El texto no sale de tu equipo.</span>
+              <span class="row"><button class="btn sm" id="av-cancel" type="button">Ahora no</button><button class="btn sm btn--accent" id="av-ok" type="button"><span class="dot" aria-hidden="true"></span>Descargar · 168 MB</button></span>
+            </div>
+          </div>
+          <p class="sr-status" id="av-live" aria-live="polite" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)"></p>
+
+          <div class="art-text" id="art-text">
+            <p><span class="s">Durante años, escuchar un artículo dependía de servicios de pago en la nube.</span> <span class="s">Cada palabra costaba dinero y el texto viajaba a un servidor ajeno.</span></p>
+            <p><span class="s">Hoy un modelo de cien millones de parámetros genera la voz en el propio navegador, a 48 kHz y en estéreo.</span> <span class="s">Lo hace por fragmentos de 80 milisegundos, así que empieza a sonar antes de terminar la primera frase.</span></p>
+            <p><span class="s">El 3,5 % de los lectores lo prueba la primera semana.</span> <span class="s">Los demás simplemente siguen leyendo, como siempre.</span></p>
+          </div>
+        </div>
+        <div class="states" role="group" aria-label="Ver un estado del componente">
+          <button type="button" data-state="idle" aria-pressed="true">Reposo</button>
+          <button type="button" data-state="confirm" aria-pressed="false">Confirmar descarga</button>
+          <button type="button" data-state="download" aria-pressed="false">Descargando</button>
+          <button type="button" data-state="playing" aria-pressed="false">Leyendo</button>
+          <button type="button" data-state="fallback" aria-pressed="false">Voz del sistema</button>
+          <button type="button" data-state="error" aria-pressed="false">Error</button>
+        </div>
+        <p class="demo-note">Maqueta: los estados son reales del contrato, el audio se simula. La versión publicada usará el componente de verdad.</p>
+      </div>
+    </div>
+  </div>
+
+  <section class="band" id="como-funciona">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="label">Cómo funciona</span>
+        <h2>De la página al oído en tres pasos</h2>
+        <p class="muted">Todo ocurre dentro de la pestaña del visitante. La inferencia corre en un Web Worker para que la página no se trabe mientras suena.</p>
+      </div>
+      <div class="pipeline">
+        <div class="step">
+          <span class="n">1 · detectar</span>
+          <h3>Encuentra el artículo</h3>
+          <p class="muted">Busca <span class="mono">&lt;article&gt;</span>, <span class="mono">itemprop="articleBody"</span> o el bloque con más texto. Ignora menús, barras laterales, pies y código.</p>
+          <div class="specimen">&lt;nav&gt; <span class="from">Inicio · Blog · Contacto</span><br>&lt;article&gt; <span class="to">La radio volvió a casa…</span><br>&lt;aside&gt; <span class="from">Te puede interesar</span></div>
+        </div>
+        <div class="step">
+          <span class="n">2 · preparar</span>
+          <h3>Lo vuelve pronunciable</h3>
+          <p class="muted">Convierte cifras, fechas y siglas en palabras y divide el texto en segmentos de hasta 75 tokens, cortando siempre en una pausa natural.</p>
+          <div class="specimen"><span class="from">3,5 %</span> → <span class="to">tres coma cinco por ciento</span><br><span class="seg">Durante años, escuchar…</span> <span class="seg">Cada palabra…</span></div>
+        </div>
+        <div class="step">
+          <span class="n">3 · hablar</span>
+          <h3>Genera la voz en tu equipo</h3>
+          <p class="muted">MOSS-TTS-Nano produce 12,5 frames por segundo de audio; cada uno son 80 ms. Mientras suena uno, ya se calcula el siguiente.</p>
+          <div class="frames" aria-hidden="true" id="frames"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="motores">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="label">Motores de voz</span>
+        <h2>Siempre hay voz, incluso en equipos modestos</h2>
+        <p class="muted">Con <span class="mono">engine="auto"</span> el componente elige solo. Cuando usa la voz del sistema, lo dice en pantalla.</p>
+      </div>
+      <div class="table-scroll">
+        <table class="engines">
+          <thead><tr><th>Motor</th><th>Dónde corre MOSS</th><th>Descarga del visitante</th><th>El texto sale del navegador</th><th>Para quién</th></tr></thead>
+          <tbody>
+            <tr><td>moss-browser</td><td>En el navegador, con WebGPU o WASM</td><td>La voz, una sola vez</td><td class="yes">No</td><td>Por defecto. Privacidad y cero servidores</td></tr>
+            <tr><td>moss-server</td><td>En tu servidor (<span class="mono">/v1/audio/speech</span>)</td><td>Solo el audio</td><td class="no">Sí, a tu servidor</td><td>Sitios que no quieren que el visitante descargue nada</td></tr>
+            <tr><td>web-speech</td><td>No usa MOSS: voz del sistema operativo</td><td>Nada</td><td>Depende del sistema</td><td>Respaldo automático</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="integrar">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="label">Integrar</span>
+        <h2>Un elemento HTML. Funciona en cualquier framework</h2>
+        <p class="muted">Es un Custom Element estándar con Shadow DOM: tus estilos no lo rompen y los suyos no tocan tu sitio. Se personaliza con variables <span class="mono">--av-*</span>.</p>
+      </div>
+      <div class="tabs" role="tablist" aria-label="Ejemplos por framework" id="tabs"></div>
+      <div class="tabpanel" role="tabpanel" id="tabpanel" tabindex="0"><pre id="tabcode"></pre></div>
+    </div>
+  </section>
+
+  <section class="band" id="principios">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="label">Respeto por quien escucha</span>
+        <h2>Lo que el componente nunca hace</h2>
+      </div>
+      <div class="principles">
+        <div class="principle"><h3>No descarga nada sin permiso</h3><p class="muted">Ni un byte del modelo hasta que el visitante pulsa play y ve el tamaño.</p></div>
+        <div class="principle"><h3>No envía tu texto a terceros</h3><p class="muted">Con el motor del navegador, el artículo no sale del dispositivo. Sin telemetría ni cookies.</p></div>
+        <div class="principle"><h3>No ejecuta pesos alterados</h3><p class="muted">Cada archivo del modelo se comprueba con SHA-256 contra un manifiesto incluido en el paquete.</p></div>
+        <div class="principle"><h3>No te deja sin voz</h3><p class="muted">Si el equipo no puede con el modelo, usa la voz del sistema y lo indica.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="estado">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="label">Estado del proyecto</span>
+        <h2>En desarrollo, con los números a la vista</h2>
+        <p class="muted">Antes de escribir el componente se midió si MOSS puede hablar en un navegador sin cortes. Esto es lo que hay hasta ahora.</p>
+      </div>
+      <div class="status">
+        <div class="measures" aria-label="Mediciones del spike T-000">
+          <div class="measure"><span>Tokenizador portado a TypeScript, idéntico al oficial</span><span class="v ok">9/9</span></div>
+          <div class="measure"><span>Frames generados idénticos al runtime oficial</span><span class="v ok">bit a bit</span></div>
+          <div class="measure"><span>Primer audio en CPU, con el modelo cargado</span><span class="v ok">≈ 0,22 s</span></div>
+          <div class="measure"><span>Velocidad en CPU de escritorio (RTF)</span><span class="v ok">0,4</span></div>
+          <div class="measure"><span>Velocidad con WebGPU, primera versión (RTF)</span><span class="v warn">optimizando</span></div>
+          <div class="measure"><span>Descarga de la voz (variante en evaluación)</span><span class="v">168–685 MB</span></div>
+        </div>
+        <ol class="roadmap">
+          <li class="now"><span class="when">ahora</span><span>Spike T-000: MOSS medido en el navegador</span></li>
+          <li><span class="when">0.1.0</span><span>Detección, lectura con pausa y progreso, motor en el navegador</span></li>
+          <li><span class="when">0.2.0</span><span>Servidor propio, voz del sistema, resaltado, velocidad y voces</span></li>
+          <li><span class="when">0.3.0</span><span>Temas, inserción automática, ejemplos por framework</span></li>
+          <li><span class="when">1.0.0</span><span>Contrato estable y accesibilidad AA verificada</span></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="preguntas">
+    <div class="wrap">
+      <div class="sec-head"><span class="label">Preguntas</span><h2>Lo que suelen preguntar</h2></div>
+      <div class="faqs">
+        <details class="faq"><summary>¿Cuánto pesa?</summary><p>El script que carga tu página pesa menos de 15 kB. La voz se descarga aparte, solo si el visitante pulsa play, y queda en la caché del navegador para los demás artículos de tu sitio.</p></details>
+        <details class="faq"><summary>¿En qué idiomas lee?</summary><p>MOSS-TTS-Nano habla 20 idiomas. La versión 1 prepara el texto con cuidado en español e inglés; los demás funcionan con una preparación más simple.</p></details>
+        <details class="faq"><summary>¿Qué navegadores soporta?</summary><p>Chrome, Edge y Firefox en sus dos últimas versiones y Safari 17 o posterior. Donde no hay WebGPU usa WebAssembly, y si tampoco alcanza, la voz del sistema.</p></details>
+        <details class="faq"><summary>¿Las voces imitan a personas reales?</summary><p>No. El paquete no incluye voces clonadas de personas o personajes reconocibles. Las voces se grabarán con el consentimiento de quien presta su voz.</p></details>
+        <details class="faq"><summary>¿Es oficial de OpenMOSS?</summary><p>No. Es un proyecto independiente que usa el modelo MOSS-TTS-Nano, publicado por OpenMOSS bajo licencia Apache-2.0, con su atribución.</p></details>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="row"><span class="brand"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>article-voice</span><span>Licencia MIT · <a href="https://github.com/MoiBaldenegro/article-voice">github.com/MoiBaldenegro/article-voice</a></span></div>
+    <p>Usa MOSS-TTS-Nano de OpenMOSS Team (Fudan University, SII y MOSI), Apache-2.0. Los pesos se descargan de su repositorio de origen. Diseño: MXVI design system.</p>
+  </div>
+</footer>
+
+<script>
+(() => {
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const $ = (id) => document.getElementById(id);
+  const av = $('av'), play = $('av-play'), icon = $('av-icon'), title = $('av-title'), meta = $('av-meta'),
+        bar = $('av-bar'), engine = $('av-engine'), rateBtn = $('av-rate'), confirmBox = $('av-confirm'), live = $('av-live');
+  const sentences = [...document.querySelectorAll('#art-text .s')];
+  const PLAY = 'M3 1.5v13l11-6.5z', PAUSE = 'M3 1.5h3.5v13H3zM9.5 1.5H13v13H9.5z', RETRY = 'M8 2a6 6 0 1 0 5.7 4.1l-1.8.6A4.1 4.1 0 1 1 8 3.9V6l3.5-3L8 0z';
+  let state = 'idle', timer = null, cursor = 0, rate = 1, downloaded = false, pct = 0;
+  const rates = [1, 1.25, 1.5, 2, 0.75];
+
+  const setIcon = (d) => icon.firstElementChild.setAttribute('d', d);
+  const announce = (t) => { live.textContent = t; };
+  const clearTimer = () => { if (timer) { clearInterval(timer); timer = null; } };
+  const paint = () => sentences.forEach((s, i) => { s.classList.toggle('now', state === 'playing' && i === cursor); s.classList.toggle('done', (state === 'playing' || state === 'paused') && i < cursor); });
+
+  function go(next) {
+    clearTimer();
+    state = next;
+    av.classList.toggle('playing', next === 'playing');
+    confirmBox.hidden = next !== 'confirm';
+    engine.className = 'chip';
+    document.querySelectorAll('.states button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.state === next || (next === 'paused' && b.dataset.state === 'playing'))));
+    if (next === 'idle') { setIcon(PLAY); title.textContent = 'Escuchar'; meta.textContent = '2 min · español'; bar.style.width = '0'; engine.textContent = 'moss · webgpu'; cursor = 0; play.setAttribute('aria-label', 'Escuchar el artículo'); }
+    if (next === 'confirm') { setIcon(PLAY); title.textContent = 'Descargar la voz'; meta.textContent = '168 MB · solo la primera vez'; announce('Hace falta descargar la voz, 168 megas'); }
+    if (next === 'download') {
+      setIcon(PAUSE); title.textContent = 'Descargando la voz'; play.setAttribute('aria-label', 'Cancelar la descarga');
+      pct = 0;
+      timer = setInterval(() => { pct = Math.min(100, pct + (reduce ? 25 : 4)); bar.style.width = pct + '%'; meta.textContent = `${Math.round(168 * pct / 100)} de 168 MB · ${pct} %`; if (pct >= 100) { downloaded = true; go('playing'); } }, reduce ? 300 : 120);
+    }
+    if (next === 'playing') {
+      setIcon(PAUSE); title.textContent = 'Leyendo'; engine.textContent = 'moss · webgpu'; engine.classList.add('ok'); play.setAttribute('aria-label', 'Pausar'); announce('Reproduciendo');
+      const tick = () => { const left = Math.max(0, Math.round((sentences.length - cursor) * 9 / rate)); meta.textContent = `frase ${cursor + 1} de ${sentences.length} · quedan ${left} s`; bar.style.width = `${(cursor / sentences.length) * 100}%`; paint(); };
+      tick();
+      timer = setInterval(() => { cursor++; if (cursor >= sentences.length) { go('ended'); return; } tick(); }, 2600 / rate);
+    }
+    if (next === 'paused') { setIcon(PLAY); title.textContent = 'En pausa'; play.setAttribute('aria-label', 'Continuar'); announce('En pausa'); }
+    if (next === 'ended') { setIcon(PLAY); title.textContent = 'Terminado'; meta.textContent = 'Escuchar otra vez'; bar.style.width = '100%'; cursor = 0; play.setAttribute('aria-label', 'Escuchar otra vez'); announce('Terminado'); }
+    if (next === 'fallback') { setIcon(PAUSE); title.textContent = 'Leyendo'; meta.textContent = 'frase 2 de 6 · quedan 40 s'; engine.textContent = 'voz del sistema'; bar.style.width = '18%'; cursor = 1; av.classList.add('playing'); }
+    if (next === 'error') { setIcon(RETRY); title.textContent = 'No se pudo descargar la voz'; meta.textContent = 'Revisa la conexión y vuelve a intentarlo'; engine.textContent = 'av_model_download_failed'; bar.style.width = '0'; play.setAttribute('aria-label', 'Reintentar'); announce('Error al descargar la voz'); }
+    paint();
+  }
+
+  play.addEventListener('click', () => {
+    if (state === 'idle' || state === 'ended') go(downloaded ? 'playing' : 'confirm');
+    else if (state === 'confirm') go('download');
+    else if (state === 'download') go('idle');
+    else if (state === 'playing' || state === 'fallback') go('paused');
+    else if (state === 'paused') go('playing');
+    else if (state === 'error') go('download');
+  });
+  $('av-ok').addEventListener('click', () => go('download'));
+  $('av-cancel').addEventListener('click', () => go('idle'));
+  rateBtn.addEventListener('click', () => { rate = rates[(rates.indexOf(rate) + 1) % rates.length]; rateBtn.textContent = rate + '×'; if (state === 'playing') go('playing'); });
+  document.querySelectorAll('.states button').forEach((b) => b.addEventListener('click', () => { if (b.dataset.state === 'playing') downloaded = true; go(b.dataset.state); }));
+  sentences.forEach((s, i) => s.addEventListener('click', () => { if (state === 'playing' || state === 'paused') { cursor = i; go('playing'); } }));
+
+  // Frames de audio (paso 3): 25 barras = 2 s de audio.
+  const frames = $('frames');
+  for (let i = 0; i < 25; i++) { const b = document.createElement('i'); b.style.height = (25 + Math.abs(Math.sin(i * 1.7)) * 75) + '%'; frames.appendChild(b); }
+
+  // Copiar el snippet
+  $('copy-snippet').addEventListener('click', async (e) => {
+    const text = $('snippet-code').innerText;
+    try { await navigator.clipboard.writeText(text); e.target.textContent = 'Copiado'; }
+    catch { const r = document.createRange(); r.selectNodeContents($('snippet-code')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); e.target.textContent = 'Seleccionado'; }
+    setTimeout(() => (e.target.textContent = 'Copiar'), 1600);
+  });
+
+  // Pestañas de integración
+  const examples = {
+    'HTML': `<script type="module" src="https://cdn.jsdelivr.net/npm/article-voice@1/dist/cdn/article-voice.js"><\/script>\n\n<article-voice></article-voice>\n<article>…tu artículo…</article>`,
+    'React': `import 'article-voice';\n\nexport function Post({ post }) {\n  return (\n    <>\n      <article-voice for="post-body" />\n      <article id="post-body">{post.content}</article>\n    </>\n  );\n}`,
+    'Vue': `<script setup>\nimport 'article-voice';\n<\/script>\n\n<template>\n  <article-voice target=".entry-content" />\n  <div class="entry-content" v-html="post.html" />\n</template>`,
+    'Svelte': `<script>\n  import 'article-voice';\n  export let post;\n<\/script>\n\n<article-voice for="post" lang="es" />\n<article id="post">{@html post.html}</article>`,
+    'Astro': `---\nimport 'article-voice';\n---\n<article-voice server-url="https://tts.tu-sitio.com" />\n<article><slot /></article>`,
+    'Tema': `article-voice {\n  --av-accent: #0a7c66;\n  --av-surface: #ffffff;\n  --av-text: #1b1b1b;\n  --av-font: "Inter", sans-serif;\n}\n\narticle-voice::part(play) {\n  border-width: 2px;\n}`,
+  };
+  const tabs = $('tabs'), code = $('tabcode');
+  Object.keys(examples).forEach((name, i) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.role = 'tab'; b.textContent = name; b.id = 'tab-' + name;
+    b.setAttribute('aria-selected', String(i === 0)); b.setAttribute('aria-controls', 'tabpanel');
+    b.addEventListener('click', () => { tabs.querySelectorAll('button').forEach((x) => x.setAttribute('aria-selected', 'false')); b.setAttribute('aria-selected', 'true'); code.textContent = examples[name]; });
+    b.addEventListener('keydown', (e) => { const all = [...tabs.querySelectorAll('button')]; const k = all.indexOf(b); if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { const n = all[(k + (e.key === 'ArrowRight' ? 1 : all.length - 1)) % all.length]; n.focus(); n.click(); } });
+    tabs.appendChild(b);
+  });
+  code.textContent = examples['HTML'];
+  go('idle');
+})();
+</script>
