@@ -1,0 +1,18 @@
+{
+  "name": "t000-moss-browser-spike",
+  "private": true,
+  "type": "module",
+  "description": "Spike T-000: MOSS-TTS-Nano en Node y en el navegador. Código desechable.",
+  "scripts": {
+    "parity": "node src/node-parity.ts",
+    "serve": "node src/serve.ts"
+  },
+  "dependencies": {
+    "onnxruntime-node": "1.31.1",
+    "onnxruntime-web": "1.31.1"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "typescript": "7.0.2"
+  }
+}
