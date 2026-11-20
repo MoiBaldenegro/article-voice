@@ -1,6 +1,11 @@
 # Handoff
 
-- Hecho (constructor, issue #5 / T-011): `libs/reader/src/core/domain/ArticleDetector.ts` (puro, sin DOM) + `ArticleDetector.spec.ts` con corpus de 14 estructuras de página. Entrada: `ArticleCandidate[]` (id, tag, wordCount, linkWordCount, paragraphCount, isArticleBody?, excluded?), `MinWords`, `explicitId?`. Salida: `{ok:true,candidate,rule}` o `{ok:false,code}` (`AV_ARTICLE_NOT_FOUND` / `AV_ARTICLE_TOO_SHORT`). Orden RN-03: explícito → único `<article>` → articleBody → único `<main>` → `densityScore`. Excluye nav/aside/footer/form/etc. y `excluded`.
-- Estado: NO pude ejecutar `pnpm verify` ni prettier (comandos denegados; sesión sin aprobación). Ajusté a mano el formato a printWidth 100, pero puede fallar prettier/typecheck/lint. Correr `pnpm prettier --write libs && pnpm verify` primero (también cubre T-010, que tampoco se había verificado).
-- No exportado aún desde `src/index.ts` (la API pública se decide con T-003/T-004).
-- Siguiente paso: verificar lo anterior; T-012 (#8) debe producir los `ArticleCandidate` desde el DOM (conteo sin descendientes excluidos RN-02).
+- Hecho (constructor, issue #6 / T-013 + T-014), en `libs/reader/src/core/domain/`:
+  - `number-words.ts`: cardinales/ordinales/año es-en (< 1e12), concordancia es (un/una, -ientas).
+  - `TextNormalizer.ts`: `normalize(text, lang)` puro (RN-11): URLs→dominio, fechas, horas, monedas, %, ordinales, abreviaturas, números, emojis/símbolos. Solo es/en convierten números; otros idiomas solo limpieza.
+  - `Segment.ts`: `BlockRef` (alias string provisional hasta T-012), `TextSpan`, `createTextSpan` (valida 0≤start<end≤len, `AV_INVALID_TEXT_SPAN`), `Segment`.
+  - `Segmenter.ts`: `segment(blocks, lang)` (RN-05): ≤300 chars, corta oración → coma/; → palabra; un bloque nunca comparte segmento; spans apuntan al texto original.
+  - Specs de los tres. Arreglé también un error de typecheck previo en `ArticleDetector.spec.ts` (exactOptionalPropertyTypes).
+- Estado: `pnpm verify` en verde (136 tests).
+- No exportado aún desde `src/index.ts` (API pública con T-003/T-004).
+- Siguiente paso: T-012 (#8) debe definir el `BlockRef` real y reemplazar el alias; T-020/T-021 (#7) usa `Segment` en `Narration`.

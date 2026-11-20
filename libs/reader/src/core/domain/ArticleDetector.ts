@@ -43,11 +43,7 @@ export interface DetectInput {
 }
 
 export type DetectionRule =
-  | 'explicit'
-  | 'single-article'
-  | 'article-body'
-  | 'single-main'
-  | 'density';
+  'explicit' | 'single-article' | 'article-body' | 'single-main' | 'density';
 
 export type DetectionResult =
   | { readonly ok: true; readonly candidate: ArticleCandidate; readonly rule: DetectionRule }

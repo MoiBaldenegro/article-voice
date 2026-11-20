@@ -42,7 +42,11 @@ const CORPUS: Page[] = [
   },
   {
     name: 'itemprop="articleBody" entre varios div',
-    candidates: [c('d1', 'div', 500), c('body', 'div', 450, { isArticleBody: true }), c('d2', 'div', 100)],
+    candidates: [
+      c('d1', 'div', 500),
+      c('body', 'div', 450, { isArticleBody: true }),
+      c('d2', 'div', 100),
+    ],
     expected: { id: 'body', rule: 'article-body' },
   },
   {
@@ -52,7 +56,11 @@ const CORPUS: Page[] = [
   },
   {
     name: 'div soup: gana el div con más prosa',
-    candidates: [c('wrap', 'div', 600, { linkWordCount: 100 }), c('post', 'div', 550), c('c', 'div', 80)],
+    candidates: [
+      c('wrap', 'div', 600, { linkWordCount: 100 }),
+      c('post', 'div', 550),
+      c('c', 'div', 80),
+    ],
     expected: { id: 'post', rule: 'density' },
   },
   {
@@ -121,7 +129,11 @@ describe('ArticleDetector', () => {
   });
 
   it.each(CORPUS)('$name', ({ candidates, explicitId, expected }) => {
-    const result = detector.detect({ candidates, minWords: MinWords.of(120), explicitId });
+    const result = detector.detect({
+      candidates,
+      minWords: MinWords.of(120),
+      ...(explicitId === undefined ? {} : { explicitId }),
+    });
     if ('code' in expected) {
       expect(result).toEqual({ ok: false, code: expected.code });
     } else {
