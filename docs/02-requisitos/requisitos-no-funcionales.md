@@ -7,13 +7,13 @@ Hardware de referencia: ver [rendimiento](../06-calidad/rendimiento.md#hardware-
 | ID | Categoría | Requisito | Medida | Verificación |
 | --- | --- | --- | --- | --- |
 | RNF-PERF-01…05 | Tamaño e importación | Presupuestos de [rendimiento](../06-calidad/rendimiento.md) | — | size-limit, Playwright |
-| RNF-PERF-10 | Latencia | Tiempo desde play hasta el primer audio con el modelo en caché | ≤ 2 s p95 en Ref-D con WebGPU; ≤ 4 s en WASM ⚑ | benchmark del spike y nocturno |
-| RNF-PERF-11 | Fluidez | Sin cortes: la síntesis va por delante de la reproducción | RTF ≤ 0.5 con WebGPU y ≤ 0.8 con WASM en Ref-D ⚑; 0 vacíos de búfer en un artículo de 10 min | nocturno + manual |
+| RNF-PERF-10 | Latencia | Tiempo desde play hasta el primer audio | `moss-server`: ≤ 2 s p95 con el servidor de referencia. `moss-browser` (experimental, modelo en caché): ≤ 2 s p95 con WebGPU; ≤ 4 s en WASM ⚑. Medido q4 WebGPU: 0,9 s | pruebas con servidor falso y benchmark del spike |
+| RNF-PERF-11 | Fluidez | Sin cortes: la síntesis va por delante de la reproducción | 0 vacíos de búfer en un artículo de 10 min con `moss-server` y `web-speech` (**exigible en 0.1.0**). Para que `auto` elija `moss-browser`: RTF ≤ 0.5 con WebGPU y ≤ 0.8 con WASM en Ref-D; medido hoy 1,93 (WASM oficial), 5,5 (q4 WebGPU), 10,6 (WebGPU oficial): **no se cumple**, por eso es experimental (ADR-0018) | nocturno + manual |
 | RNF-PERF-12 | Peso de la página | El JS que se carga con la página (sin el worker ni ORT) | ≤ 15 kB min+gzip | size-limit |
 | RNF-PERF-13 | Hilo principal | Durante la reproducción, el componente no causa tareas largas | 0 tareas > 50 ms atribuibles al componente | Playwright + PerformanceObserver |
 | RNF-PERF-14 | Memoria | Memoria pico del worker durante la narración | ≤ ⚑ (se fija en el spike) | DevTools / `performance.measureUserAgentSpecificMemory` |
 | RNF-NET-01 | Red | Recursos del modelo descargados antes del primer play | 0 bytes | Playwright (intercepción de peticiones) |
-| RNF-NET-02 | Red | Descarga del motor por defecto | ≤ 200 MB ⚑ (ADR-0018) | manifiesto |
+| RNF-NET-02 | Red | Descarga del motor por defecto (`moss-server`/`web-speech`: ninguna). Solo `moss-browser` experimental descarga pesos y con confirmación | 0 MB por defecto; `moss-browser` ≈ 728 MiB oficial (ADR-0018) | manifiesto |
 | RNF-NET-03 | Red | Descarga interrumpida | Se reanuda sin volver a bajar los archivos ya verificados | prueba con red cortada |
 | RNF-COMP-01 | Compatibilidad | Navegadores | Chrome/Edge y Firefox (2 últimas versiones), Safari ≥ 17 (escritorio e iOS) | Playwright (Chromium, Firefox, WebKit) |
 | RNF-COMP-02 | Compatibilidad | Frameworks | Funciona sin envoltorio en HTML plano, React 19, Vue 3, Svelte 5, Angular 18+ y Astro | ejemplos probados en CI |
@@ -24,7 +24,7 @@ Hardware de referencia: ver [rendimiento](../06-calidad/rendimiento.md#hardware-
 | RNF-SEC-03 | Seguridad | Vulnerabilidades altas o críticas conocidas | 0 | `pnpm audit --prod` |
 | RNF-SEC-04 | Seguridad | Integridad de los recursos del modelo | 100 % verificados con SHA-256 | prueba con archivo alterado |
 | RNF-SEC-05 | Seguridad | El texto del artículo nunca se inserta como HTML | 0 usos de `innerHTML`/`insertAdjacentHTML` con datos | lint (`no-unsanitized`) |
-| RNF-PRIV-01 | Privacidad | Con `moss-browser` y `web-speech`, el texto no sale del navegador | 0 peticiones con contenido del artículo | Playwright (intercepción) |
+| RNF-PRIV-01 | Privacidad | Con `moss-browser` y `web-speech`, el texto no sale del navegador. Con `moss-server` sale solo hacia el `server-url` configurado por el sitio, nunca a un tercero | 0 peticiones con contenido del artículo a otros destinos | Playwright (intercepción) |
 | RNF-PRIV-02 | Privacidad | Sin telemetría ni cookies propias | 0 | revisión |
 | RNF-A11Y-01 | Accesibilidad | WCAG 2.2 AA del componente | 0 violaciones de axe; teclado completo; foco visible; `prefers-reduced-motion` | Playwright + axe; revisión manual con NVDA y VoiceOver antes de 1.0 |
 | RNF-A11Y-02 | Accesibilidad | Objetivos táctiles | ≥ 44×44 px | prueba visual |

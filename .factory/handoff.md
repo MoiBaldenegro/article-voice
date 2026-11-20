@@ -1,5 +1,6 @@
 # Handoff
 
-- Issue #12 (CP-SPIKE-3): NO se pudo completar; requiere 5 oyentes humanos puntuando (MOS) audios oficial vs q4. No se simuló ningún resultado ni se tocó el informe.
-- Para la persona: ejecutar `node spikes/t000-moss-browser/scripts/make-blind-pack.mjs` (genera A/B en `spikes/t000-moss-browser/out/escucha-ciega`), que 5 personas puntúen 1-5 las 10 frases, y registrar MOS por variante y diferencia en `docs/03-arquitectura/spikes/T-000-informe.md` sección 5 (criterio: MOS >= 3.5 y diferencia <= 0.5).
-- Siguiente paso técnico (independiente): T-022 (PlayNarration), conectar DetectArticle con createCore; T-005 (release/nightly).
+- Issue #13 hecho (solo docs): backlog replanificado. Orden 0.1.0: detección/estado/UI -> `moss-server` (T-051) -> `web-speech` (T-050) -> UI; `moss-browser` (T-030..T-033) pasó a Épica 6 experimental, con T-035 (investigación: códec por lotes, KV en GPU, WebNN). Actualizados vision.md, prd.md (F-04/F-07/F-08, R-1, H0/H3/H4) y requisitos-no-funcionales.md (PERF-10/11, NET-02, PRIV-01) y docs/backlog.md.
+- No se tocó código. Los issues los abre la fábrica (ver nextIssues en result.json).
+- Siguiente paso: T-022 (PlayNarration) y T-051 (`MossServerEngine` con servidor falso).
+- Pendiente humano: #12 (escucha ciega con 5 personas), no bloquea.
