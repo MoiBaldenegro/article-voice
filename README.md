@@ -32,6 +32,19 @@ framework o sin ninguno.
 - **Qué se está haciendo:** [backlog](docs/08-tareas/backlog.md)
 - **Contribuir:** [CONTRIBUTING.md](CONTRIBUTING.md) · **Seguridad:** [SECURITY.md](SECURITY.md)
 
+## Desarrollo
+
+Requisitos: Node >= 20 y [pnpm](https://pnpm.io).
+
+```sh
+pnpm install   # instala dependencias
+pnpm test      # corre Jest
+pnpm lint      # ESLint, incluidas las reglas de capas (docs/05-estandares/arquitectura-interna.md)
+pnpm verify    # typecheck + lint + prettier + tests: lo que debe pasar antes de abrir un PR
+```
+
+Todavía no hay build ni componente publicable: solo el núcleo `libs/reader` (T-001/T-002).
+
 ## Licencia y atribución
 
 [MIT](LICENSE). Usa el modelo MOSS-TTS-Nano de OpenMOSS Team (Fudan University, SII y MOSI),
