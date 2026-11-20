@@ -9,7 +9,7 @@ Cada tarea sigue la [plantilla](plantilla-de-ticket.md). Las que tienen detalle 
 
 | ID | Tarea | Estado | Criterio de salida |
 | --- | --- | --- | --- |
-| [T-000](tickets/T-000-spike-moss-en-el-navegador.md) | **Spike:** MOSS-TTS-Nano en el navegador, medido | 🔄 En curso | Informe con números; ADR-0018 aceptado |
+| [T-000](tickets/T-000-spike-moss-en-el-navegador.md) | **Spike:** MOSS-TTS-Nano en el navegador, medido | ✅ Hecho (CA-5 parcial) | Informe con números; ADR-0018 aceptado |
 
 ## Épica 0 · Esqueleto del proyecto
 

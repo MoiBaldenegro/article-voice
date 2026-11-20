@@ -1,6 +1,6 @@
 # ADR-0018 · Variante del modelo y entrega de los pesos
 
-- **Estado:** Propuesto · se decide con los resultados del spike T-000
+- **Estado:** Aceptado · decidido con el informe del spike [T-000](../spikes/T-000-informe.md)
 - **Fecha:** 2026-11-20
 - **Relacionados:** ADR-0014, [Rendimiento](../../06-calidad/rendimiento.md)
 
@@ -27,6 +27,15 @@ desconocida. No hay métricas publicadas de velocidad en navegador.
 | A · Cuantizada de la comunidad (4 bits) | Calidad aceptable en la escucha ciega (CP-SPIKE-3) y RNF-PERF-10/11 cumplidos |
 | B · Cuantización propia (int8/q4) desde los ONNX oficiales, publicada en un repo propio | A no cumple calidad, pero una cuantización propia sí |
 | C · Oficial completa | Ninguna cuantizada cumple; entonces `auto` no elige `moss-browser` en móviles |
+
+## Decisión
+
+Se elige la **opción C: variante oficial completa** (≈ 728 MiB) como predeterminada, fijada a estos commits de Hugging Face:
+
+- `OpenMOSS-Team/MOSS-TTS-Nano-100M-ONNX` @ `f52645cb467506d8e18e746ddd59482685b74e58`
+- `OpenMOSS-Team/MOSS-Audio-Tokenizer-Nano-ONNX` @ `ceff0d0749bfb3fa2d61149794ec6feef0d1e1ae`
+
+Motivo (datos del informe): el port es exacto, pero en Chrome el mejor caso medido (WASM 4 hilos, aislado) da RTF 1,85 y WebGPU 10,6, frente a ≤ 0,8 y ≤ 0,5 exigidos; el cuello de botella es el cómputo en el navegador, no el tamaño de los pesos. La variante cuantizada (A, 168 MiB) no se midió en navegador ni se escuchó a ciegas, así que no se puede elegir A ni B. Consecuencia: `auto` no elige `moss-browser` hasta cumplir RNF-PERF-11; MOSS es opt-in con el tamaño visible. A y B se reabren con una medición nueva (CA-5 queda pendiente).
 
 ## Consecuencias
 

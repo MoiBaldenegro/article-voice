@@ -1,6 +1,6 @@
 # T-000 · Spike: MOSS-TTS-Nano en el navegador, medido
 
-- **Tipo:** spike (investigación con código desechable) · **Estado:** 🔄 En curso · **Estimación:** L (time-box: 3 días)
+- **Tipo:** spike (investigación con código desechable) · **Estado:** ✅ Hecho (CA-5 parcial: ver informe) · **Estimación:** L (time-box: 3 días)
 - **Épica:** S · **Bloquea a:** T-030, T-031, T-032 y la aceptación de ADR-0018
 
 ## Contexto
