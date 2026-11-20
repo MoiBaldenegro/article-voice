@@ -1,6 +1,6 @@
 # Handoff
 
-- Hecho (constructor, issue #4 / T-010): VOs en `libs/reader/src/core/domain/value-objects/`: `PlaybackRate`, `MinWords`, `VoiceId`, `EngineKind`, `HttpsUrl`, `Language` (+ `invalid-option.ts`, `index.ts`, `value-objects.spec.ts`). Fábricas `of()`/`from()`; errores `AV_INVALID_OPTION` (y `AV_UNSUPPORTED_LANGUAGE` en Language) vía `DomainValidationError`.
-- Estado: código y tests escritos, pero NO pude ejecutar `pnpm verify` (la sesión negó ejecutar comandos). Puede haber fallos de prettier/typecheck/lint sin detectar; correr `pnpm prettier --write libs && pnpm verify` primero.
-- Supuesto a validar: la lista de 20 idiomas en `Language.ts` (`SUPPORTED_LANGUAGES`) es de memoria; no está en docs. Contrastar con MOSS-TTS-Nano / informe T-000.
-- Siguiente paso: correr `pnpm verify`, corregir lo que salga, y luego seguir con #5 (T-011) u otros issues abiertos.
+- Hecho (constructor, issue #5 / T-011): `libs/reader/src/core/domain/ArticleDetector.ts` (puro, sin DOM) + `ArticleDetector.spec.ts` con corpus de 14 estructuras de página. Entrada: `ArticleCandidate[]` (id, tag, wordCount, linkWordCount, paragraphCount, isArticleBody?, excluded?), `MinWords`, `explicitId?`. Salida: `{ok:true,candidate,rule}` o `{ok:false,code}` (`AV_ARTICLE_NOT_FOUND` / `AV_ARTICLE_TOO_SHORT`). Orden RN-03: explícito → único `<article>` → articleBody → único `<main>` → `densityScore`. Excluye nav/aside/footer/form/etc. y `excluded`.
+- Estado: NO pude ejecutar `pnpm verify` ni prettier (comandos denegados; sesión sin aprobación). Ajusté a mano el formato a printWidth 100, pero puede fallar prettier/typecheck/lint. Correr `pnpm prettier --write libs && pnpm verify` primero (también cubre T-010, que tampoco se había verificado).
+- No exportado aún desde `src/index.ts` (la API pública se decide con T-003/T-004).
+- Siguiente paso: verificar lo anterior; T-012 (#8) debe producir los `ArticleCandidate` desde el DOM (conteo sin descendientes excluidos RN-02).
