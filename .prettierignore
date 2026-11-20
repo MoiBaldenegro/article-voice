@@ -7,3 +7,7 @@ coverage
 *.md
 .factory
 .github
+test/package/.vite-out
+test-results
+temp
+etc

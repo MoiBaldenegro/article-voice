@@ -1,0 +1,9 @@
+<!doctype html>
+<html>
+  <body>
+    <script type="module">
+      import { createCore, DomainError } from '/dist/index.js';
+      window.__result = { core: typeof createCore(), hasError: typeof DomainError };
+    </script>
+  </body>
+</html>

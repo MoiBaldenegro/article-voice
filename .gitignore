@@ -5,3 +5,8 @@ node_modules/
 spikes/t000-moss-browser/models/
 spikes/t000-moss-browser/out/
 spikes/t000-moss-browser/.venv/
+dist/
+etc/*.tmp
+temp/
+test-results/
+test/package/.vite-out/

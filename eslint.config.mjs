@@ -9,7 +9,20 @@ const restrict = (group, message) => ({
 
 // Reglas de dependencia: docs/05-estandares/arquitectura-interna.md
 export default tseslint.config(
-  { ignores: ['node_modules/**', 'dist/**', 'spikes/**', 'docs/**', 'coverage/**', '**/*.cjs'] },
+  {
+    ignores: [
+      'node_modules/**',
+      'dist/**',
+      'spikes/**',
+      'docs/**',
+      'coverage/**',
+      '**/*.cjs',
+      'test/package/.vite-out/**',
+      'test/package/fixtures/**',
+      'test/package/serve.mjs',
+      'temp/**',
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   { rules: { '@typescript-eslint/no-explicit-any': 'error', 'no-console': 'error' } },
