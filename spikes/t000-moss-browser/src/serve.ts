@@ -42,7 +42,11 @@ createServer((req, res) => {
   const p = decodeURIComponent(url.pathname);
   if (p.startsWith('/dist/')) file = join(root, 'out', 'dist', p.slice(6));
   else if (p.startsWith('/ort/')) file = join(root, 'node_modules', 'onnxruntime-web', 'dist', p.slice(5));
-  else if (p.startsWith('/models/')) file = join(modelsDir, p.slice(8));
+  else if (p.startsWith('/models/')) {
+    // Alias: los repos se guardan como <org>__<repo>; la página los pide sin la organización.
+    const rel = p.slice(8).replace(/^(MOSS-TTS-Nano-100M-ONNX|MOSS-Audio-Tokenizer-Nano-ONNX)\//, 'OpenMOSS-Team__$1/');
+    file = join(modelsDir, rel);
+  }
   if (!file || p.includes('..') || !existsSync(file)) {
     res.writeHead(404).end('not found');
     return;

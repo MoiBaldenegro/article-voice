@@ -35,12 +35,16 @@ interface Config {
   isolated: boolean;
   gpuKvCache: boolean;
   codecPolicy: 'single' | 'adaptive';
+  variant?: 'official' | 'q4';
 }
 const CONFIGS: Config[] = [
   { name: 'webgpu', backend: 'webgpu', threads: 1, isolated: false, gpuKvCache: false, codecPolicy: 'adaptive' },
   { name: 'webgpu-kvgpu', backend: 'webgpu', threads: 1, isolated: false, gpuKvCache: true, codecPolicy: 'adaptive' },
   { name: 'wasm-1hilo', backend: 'wasm', threads: 1, isolated: false, gpuKvCache: false, codecPolicy: 'adaptive' },
   { name: 'wasm-4hilos-aislado', backend: 'wasm', threads: 4, isolated: true, gpuKvCache: false, codecPolicy: 'adaptive' },
+  { name: 'q4-webgpu', backend: 'webgpu', threads: 1, isolated: false, gpuKvCache: false, codecPolicy: 'adaptive', variant: 'q4' },
+  { name: 'q4-wasm-1hilo', backend: 'wasm', threads: 1, isolated: false, gpuKvCache: false, codecPolicy: 'adaptive', variant: 'q4' },
+  { name: 'q4-wasm-4hilos-aislado', backend: 'wasm', threads: 4, isolated: true, gpuKvCache: false, codecPolicy: 'adaptive', variant: 'q4' },
 ].filter((c) => !only || only.split(',').includes(c.name)) as Config[];
 
 function startServer(isolated: boolean, port: number): Promise<ChildProcess> {
@@ -85,10 +89,11 @@ for (const cfg of CONFIGS) {
     });
 
     // 1) Paridad: la frase corta con los aleatorios de la referencia.
+    const isQ4 = cfg.variant === 'q4';
     const es = golden.phrases.find((p: any) => p.id === 'es_corta');
     const par: any = await page.evaluate(
       (c) => (window as any).runBench(c),
-      { backend: cfg.backend, threads: cfg.threads, gpuKvCache: cfg.gpuKvCache, segments: [es.prepared_text.trim()], voice: es.voice, replayDraws: [es.random_draws], codecPolicy: cfg.codecPolicy, play: false },
+      { backend: cfg.backend, threads: cfg.threads, gpuKvCache: cfg.gpuKvCache, segments: [es.prepared_text.trim()], voice: es.voice, replayDraws: isQ4 ? undefined : [es.random_draws], codecPolicy: cfg.codecPolicy, play: false, variant: cfg.variant },
     );
     const got: number[][] = par.parity[0].frames;
     const exp: number[][] = es.frames;
@@ -103,13 +108,14 @@ for (const cfg of CONFIGS) {
     // 2) Artículo de 6 frases, reproduciéndolo, para medir fluidez.
     const art: any = await page.evaluate(
       (c) => (window as any).runBench(c),
-      { backend: cfg.backend, threads: cfg.threads, gpuKvCache: cfg.gpuKvCache, segments: ARTICLE, voice: 'Nathan', codecPolicy: cfg.codecPolicy, play: true },
+      { backend: cfg.backend, threads: cfg.threads, gpuKvCache: cfg.gpuKvCache, segments: ARTICLE, voice: 'Nathan', codecPolicy: cfg.codecPolicy, play: true, variant: cfg.variant, capture: true },
     );
+    if (art.pcm) writeFileSync(join(root, 'out', `articulo-${cfg.name}.pcm`), Buffer.from(art.pcm, 'base64'));
     const peakMem = chromeMemoryMb();
     const row = {
       config: cfg.name,
       adapter,
-      paridad: { framesIguales: firstDiff < 0, primerFrameDistinto: firstDiff, frames: `${got.length} (python ${exp.length})` },
+      paridad: isQ4 ? 'no aplica (variante cuantizada, frames distintos por diseño)' : { framesIguales: firstDiff < 0, primerFrameDistinto: firstDiff, frames: `${got.length} (python ${exp.length})` },
       articulo: art.result,
       memoriaChromeMb: peakMem >= 0 && baseMem >= 0 ? peakMem - baseMem : null,
     };

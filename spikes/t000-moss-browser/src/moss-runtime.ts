@@ -124,7 +124,7 @@ export class MossRuntime {
       ['codec_full', cod('decode_full')],
     ];
     const sessions = {} as Record<SessionRole, OrtSession>;
-    for (const [role, spec] of specs) sessions[role] = await createSession(role, spec.file, spec.data);
+    for (const [role, spec] of specs) if (spec.file) sessions[role] = await createSession(role, spec.file, spec.data);
     return new MossRuntime(ort, manifest, ttsMeta, codecMeta, sessions);
   }
 
@@ -240,6 +240,7 @@ export class MossRuntime {
 
   /** Decodificación completa de una vez (equivale a decode_full_audio de la referencia). */
   async decodeFull(frames: number[][]): Promise<Float32Array[]> {
+    if (!this.sessions.codec_full) throw new Error('esta variante no incluye decode_full');
     return runCodec(this.ort, this.codec, this.sessions.codec_full, frames, {}).then((r) => r.channels);
   }
 }

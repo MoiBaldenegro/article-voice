@@ -14,6 +14,7 @@ interface InitMsg {
   threads: number;
   modelBase: string; // termina en '/', contiene MOSS-TTS-Nano-100M-ONNX/ y MOSS-Audio-Tokenizer-Nano-ONNX/
   gpuKvCache: boolean;
+  variant?: 'official' | 'q4';
 }
 interface SynthMsg {
   type: 'synth';
@@ -46,22 +47,65 @@ async function init(msg: InitMsg): Promise<void> {
   const ort = (await import(/* @vite-ignore */ '/ort/ort.webgpu.min.mjs' as string)) as typeof import('onnxruntime-web');
   ort.env.wasm.wasmPaths = '/ort/';
   ort.env.wasm.numThreads = msg.threads;
+  const q4 = msg.variant === 'q4';
   const tts = `${msg.modelBase}MOSS-TTS-Nano-100M-ONNX/`;
   const codec = `${msg.modelBase}MOSS-Audio-Tokenizer-Nano-ONNX/`;
+  const q4Base = `${msg.modelBase}danyalmalik__MOSS-TTS-Nano-100M-ONNX-WebGPU/`;
   const getJson = async (u: string) => (await fetch(u)).json();
-  manifest = (await getJson(`${tts}browser_poc_manifest.json`)) as MossManifest;
-  const ttsMeta = await getJson(`${tts}tts_browser_onnx_meta.json`);
-  const codecMeta = await getJson(`${codec}codec_browser_onnx_meta.json`);
-  tokenizer = new SentencePieceBpe(new Uint8Array(await (await fetch(`${tts}tokenizer.model`)).arrayBuffer()));
+  let ttsMeta: any;
+  let codecMeta: any;
+  if (q4) {
+    // Contrato de grafos de la variante cuantizada: moss.json + onnx/*_q4.onnx (MatMulNBits).
+    const moss = await getJson(`${q4Base}moss.json`);
+    const names = (kind: string) => Array.from({ length: moss.global_layers }, (_, i) => [`${kind}_key_${i}`, `${kind}_value_${i}`]).flat();
+    manifest = {
+      tts_config: moss.tts,
+      prompt_templates: moss.templates,
+      generation_defaults: moss.generation,
+      builtin_voices: Object.entries(moss.voices).map(([voice, v]: [string, any]) => ({ voice, display_name: v.label, group: v.group, prompt_audio_codes: v.codes })),
+    } as MossManifest;
+    ttsMeta = {
+      files: {
+        prefill: 'onnx/moss_tts_prefill_q4.onnx',
+        decode_step: 'onnx/moss_tts_decode_step_q4.onnx',
+        local_fixed_sampled_frame: 'onnx/moss_tts_local_fixed_sampled_frame_cpu.onnx',
+      },
+      external_data_files: {
+        'onnx/moss_tts_prefill_q4.onnx': ['onnx/moss_tts_global_shared_q4.data'],
+        'onnx/moss_tts_decode_step_q4.onnx': ['onnx/moss_tts_global_shared_q4.data'],
+      },
+      model_config: { audio_codebook_sizes: moss.tts.audio_codebook_sizes, hidden_size: 768 },
+      onnx: {
+        prefill_output_names: ['global_hidden', ...names('present')],
+        decode_input_names: ['input_ids', 'past_valid_lengths', ...names('past')],
+        decode_output_names: ['global_hidden', ...names('present')],
+      },
+    };
+    codecMeta = {
+      files: { decode_step: 'onnx/moss_audio_tokenizer_decode_step_cpu.onnx' },
+      external_data_files: {},
+      codec_config: { sample_rate: moss.codec.sample_rate, channels: moss.codec.channels, downsample_rate: moss.codec.downsample_rate, num_quantizers: moss.codec.num_quantizers },
+      streaming_decode: { transformer_offsets: moss.codec.transformer_offsets, attention_caches: moss.codec.attention_caches },
+    };
+    // El tokenizer.json de q4 es el mismo SentencePiece BPE; se usa el .model oficial (mismos ids).
+    tokenizer = new SentencePieceBpe(new Uint8Array(await (await fetch(`${tts}tokenizer.model`)).arrayBuffer()));
+  } else {
+    manifest = (await getJson(`${tts}browser_poc_manifest.json`)) as MossManifest;
+    ttsMeta = await getJson(`${tts}tts_browser_onnx_meta.json`);
+    codecMeta = await getJson(`${codec}codec_browser_onnx_meta.json`);
+    tokenizer = new SentencePieceBpe(new Uint8Array(await (await fetch(`${tts}tokenizer.model`)).arrayBuffer()));
+  }
 
   const sessionTimes: Record<string, number> = {};
   runtime = await MossRuntime.create(ort as unknown as OrtLike, manifest, ttsMeta, codecMeta, async (role, file, data) => {
-    const base = role.startsWith('codec') ? codec : tts;
+    const base = q4 ? q4Base : role.startsWith('codec') ? codec : tts;
     const ts = performance.now();
+    // En q4 el muestreador y el códec son grafos _cpu: van siempre al motor CPU (wasm).
+    const ep = q4 && role !== 'prefill' && role !== 'decode' ? 'wasm' : msg.backend;
     const options: Record<string, unknown> = {
-      executionProviders: [msg.backend],
+      executionProviders: [ep],
       graphOptimizationLevel: 'all',
-      externalData: data.map((d) => ({ path: d, data: `${base}${d}` })),
+      externalData: data.map((d) => ({ path: d.split('/').pop()!, data: `${base}${d}` })),
     };
     // KV cache en la GPU para no copiar decenas de MB por paso entre GPU y CPU.
     if (msg.backend === 'webgpu' && msg.gpuKvCache && (role === 'prefill' || role === 'decode')) {

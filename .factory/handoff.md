@@ -1,4 +1,5 @@
 # Handoff
 
-- Issue #9 (T-003/T-004) hecho: tsup, API Extractor (`etc/article-voice.api.md`, `api:check` verificado: un cambio de tipo lo hace fallar), publint, attw, size-limit (60 kB gzip), prueba del paquete en Playwright (Vite + HTML sin bundler) y `ci.yml` con los jobs verify y package. `pnpm verify` verde (225 tests); lo demás corrido localmente.
-- Siguiente paso: T-022 (PlayNarration) y conectar DetectArticle con createCore; #10 ya planeado. T-005 (release/nightly) sigue pendiente. Nota: ci.yml no se ha ejecutado en GitHub aún; `pnpm/action-setup` usa `packageManager` del package.json.
+- Issue #10 (T-000b) hecho: q4 portada al spike y medida en Chrome (tabla en sección 5 de `docs/03-arquitectura/spikes/T-000-informe.md`). Resultado: q4 solo WebGPU, RTF 5,5, no cumple RNF-PERF-11; ADR-0018 se queda en opción C (nota de actualización añadida, sin enmienda a A).
+- Pendiente humano: escucha ciega CP-SPIKE-3 (material en `spikes/t000-moss-browser/out/escucha-ciega`, regenerable con `scripts/make-blind-pack.mjs`).
+- Siguiente paso: T-022 (PlayNarration) y conectar DetectArticle con createCore; T-005 (release/nightly) pendiente.

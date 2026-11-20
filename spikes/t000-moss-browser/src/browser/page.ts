@@ -12,6 +12,8 @@ interface BenchConfig {
   replayDraws?: number[][];
   codecPolicy: 'single' | 'adaptive';
   play: boolean;
+  variant?: 'official' | 'q4';
+  capture?: boolean;
 }
 
 const log = (m: string) => {
@@ -33,7 +35,7 @@ async function runBench(cfg: BenchConfig): Promise<unknown> {
       worker.addEventListener('message', h);
     });
 
-  worker.postMessage({ type: 'init', backend: cfg.backend, threads: cfg.threads, modelBase: '/models/', gpuKvCache: cfg.gpuKvCache });
+  worker.postMessage({ type: 'init', backend: cfg.backend, threads: cfg.threads, modelBase: '/models/', gpuKvCache: cfg.gpuKvCache, variant: cfg.variant });
   const ready: any = await wait((d) => d.type === 'ready');
   log(`listo en ${ready.initMs} ms (${cfg.backend}, hilos=${cfg.threads}, aislado=${ready.crossOriginIsolated})`);
 
@@ -44,10 +46,12 @@ async function runBench(cfg: BenchConfig): Promise<unknown> {
   let underrunGapS = 0;
   let firstPlayed = -1;
   const segments: any[] = [];
+  const captured: Float32Array[][] = [];
   const parity: { segment: number; frames: number[][] }[] = [];
 
   worker.addEventListener('message', (e) => {
     const d = e.data;
+    if (d.type === 'chunk' && cfg.capture) captured.push(d.channels);
     if (d.type === 'chunk' && cfg.play) {
       const ch: Float32Array[] = d.channels;
       const buf = ctx.createBuffer(ch.length, ch[0]!.length, 48000);
@@ -106,7 +110,18 @@ async function runBench(cfg: BenchConfig): Promise<unknown> {
     segments: segments.length,
   };
   log(JSON.stringify(result));
-  return { result, parity };
+  let pcm: string | undefined;
+  if (cfg.capture) {
+    const n = captured.reduce((a, c) => a + c[0]!.length, 0);
+    const out = new Int16Array(n * 2);
+    let o = 0;
+    for (const c of captured) for (let i = 0; i < c[0]!.length; i++) for (let k = 0; k < 2; k++) out[o++] = Math.max(-1, Math.min(1, c[k]?.[i] ?? c[0]![i]!)) * 32767;
+    let bin = '';
+    const u8 = new Uint8Array(out.buffer);
+    for (let i = 0; i < u8.length; i += 8192) bin += String.fromCharCode(...u8.subarray(i, i + 8192));
+    pcm = btoa(bin);
+  }
+  return { result, parity, pcm };
 }
 
 (window as any).runBench = runBench;

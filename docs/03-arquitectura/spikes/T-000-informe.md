@@ -2,7 +2,7 @@
 
 - **Fecha de las mediciones:** 2026-11-20 · **Código:** `spikes/t000-moss-browser/` (desechable, ADR-0016)
 - **Resultado en una línea:** el port a TypeScript es **exacto** (mismos tokens y mismos frames que Python), pero
-  **en Chrome ninguna configuración medida cumple RNF-PERF-11**: el mejor caso (WASM con 4 hilos) tiene RTF ≈ 1,85.
+  **en Chrome ninguna configuración medida cumple RNF-PERF-11**: el mejor caso (WASM con 4 hilos) tiene RTF ≈ 1,85; la cuantizada q4 (solo WebGPU) da RTF 5,5.
 
 ## 1. Entorno exacto
 
@@ -72,16 +72,37 @@ Notas:
   4 hilos: 2 614, 2 319, 3 581, 1 453 / 1 602.
 - Una corrida por configuración, un solo equipo: son órdenes de magnitud, no el p95 de 20 repeticiones de RNF-PERF-10.
 
-## 5. Variante cuantizada (CA-5): tamaño medido, rendimiento **no medido**
+## 5. Variante cuantizada (CA-5, T-000b): medida en Chrome
 
 - **Tamaño real de descarga: 176 522 124 B ≈ 168 MiB** (`moss_tts_global_shared_q4.data` 69 312 512;
   `moss_tts_local_fixed_sampled_frame_cpu.onnx` 97 983 500; `moss_audio_tokenizer_decode_step_cpu.onnx` 7 719 606;
   `moss_tts_prefill_q4.onnx` 442 349; `moss_tts_decode_step_q4.onnx` 454 013; más `tokenizer.json`, `moss.json`,
   README y LICENSE). La oficial son 763 206 064 B ≈ 728 MiB: la cuantizada pesa ≈ 23 %.
-- **Velocidad, memoria y calidad: no se midieron.** La variante usa otro contrato (`moss.json`, `MatMulNBits`,
-  muestreador y códec en CPU, `tokenizer.json`) que el port no soporta; medirla exige portar un segundo runtime.
-  Tampoco se hizo la escucha ciega (CP-SPIKE-3). Según su ficha, WER 11,4 % frente a 9,1 % de la oficial y voz ≈ 7 % más corta.
-- **CA-5 queda abierto.** Consecuencia: la decisión de ADR-0018 no puede elegir A ni B.
+- **Port del contrato (T-000b):** el worker del spike lee `moss.json` (plantillas, voces, estado del códec) y
+  carga `onnx/*_q4.onnx` (`MatMulNBits`, `GatherBlockQuantized`) con el mismo bucle de inferencia. El muestreador y
+  el códec (`*_cpu.onnx`) van siempre al motor CPU de ORT-web. El tokenizador sigue siendo el SentencePiece del port
+  (mismo `tokenizer.model` oficial; la ficha dice que `tokenizer.json` da los mismos ids): no se portó el formato HF.
+- **Hallazgo: la cuantizada solo corre en WebGPU.** En WASM, `prefill`/`decode_step` fallan al crear la sesión:
+  `Could not find an implementation for GatherBlockQuantized(1) node ... '/wte/Gather_Q4'`. No hay camino WASM
+  para el modelo global q4, y WASM es hoy el único camino que se acerca a la fluidez.
+
+Mismo artículo de 6 frases (44 s de audio en la oficial; 39,6 s en la q4, que habla ≈ 10 % más corto), voz Nathan, Chrome 157, una corrida:
+
+| Configuración | TTFA (ms) | RTF | ms/frame mediana | ms/frame p95 | Memoria Chrome (MB) | Vacíos de búfer / s |
+| --- | --- | --- | --- | --- | --- | --- |
+| Oficial · WASM 4 hilos aislado | 842 | 1,93 | 78 | 112 | +2 120 | 551 / 29 |
+| Oficial · WebGPU | 2 621 | 10,56 | 513 | 582 | +661 | 551 / 408 |
+| **q4 · WebGPU** | **903** | **5,50** | **335** | **393** | **+694** | 494 / 167 |
+| q4 · WASM | no corre (falta `GatherBlockQuantized`) | – | – | – | – | – |
+
+- La q4 es ≈ 2× más rápida que la oficial en WebGPU y su TTFA entra en RNF-PERF-10 (≤ 2 s), pero **RTF 5,5 frente a
+  ≤ 0,5 (RNF-PERF-11)**: sigue sin ser reproducible sin cortes. El tiempo se va en el códec y en las copias CPU↔GPU,
+  que la cuantización no reduce (el códec q4 es CPU float16). Las cifras de WASM oficial se repitieron y coinciden
+  con la sección 4 (RTF 1,85 → 1,93).
+- **Calidad (CP-SPIKE-3): pendiente de personas.** Se preparó el material: `scripts/make-blind-pack.mjs` genera
+  `A.wav`/`B.wav` aleatorizados (oficial vs q4, mismo artículo) y `clave.json`; el protocolo exige 5 oyentes y MOS ≥ 3,5
+  con diferencia ≤ 0,5. No se emitió ningún juicio de calidad. Según su ficha: WER 11,4 % frente a 9,1 %.
+- **Conclusión CA-5:** la q4 no cumple RNF-PERF-11, así que **ADR-0018 no se enmienda a la opción A**.
 
 ## 6. Interpretación
 
@@ -97,17 +118,17 @@ Notas:
 
 ## 7. Recomendación para ADR-0018
 
-La cuantizada no se midió y el cuello de botella no es el tamaño de los pesos. Se recomienda:
+La cuantizada se midió (sección 5: RTF 5,5, solo WebGPU) y el cuello de botella no es el tamaño de los pesos. Se recomienda:
 
 - **Opción C como variante por defecto** (oficial completa, ≈ 728 MiB), con la entrega ya fijada: commit de HF,
   manifiesto con SHA-256, Cache Storage.
 - **`auto` no elige `moss-browser`** hasta cumplir RNF-PERF-11; la voz del sistema es el camino por defecto y MOSS
   queda opt-in con el tamaño visible antes de descargar.
-- Reabrir A/B cuando exista medición en navegador de la cuantizada y una escucha ciega.
+- Reabrir A/B solo si una optimización de cómputo (códec, KV en GPU) acerca la cuantizada a RNF-PERF-11 y pasa la escucha ciega.
 
 ## 8. Pendiente
 
-1. Portar el runtime de la variante cuantizada y medir CA-5 (velocidad, memoria, calidad con escucha ciega).
+1. Escucha ciega CP-SPIKE-3 con 5 personas (material preparado en el spike; ver sección 5).
 2. Optimizar WASM (códec en hilo aparte, opciones de sesión) y WebGPU con KV en GPU sin agotar memoria; repetir en un
    equipo tipo Ref-D con 20 repeticiones y `measureUserAgentSpecificMemory`.
 3. Escucha humana de los WAV de `out/node/`.

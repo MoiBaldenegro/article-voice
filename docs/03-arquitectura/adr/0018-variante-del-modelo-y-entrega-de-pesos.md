@@ -37,6 +37,8 @@ Se elige la **opción C: variante oficial completa** (≈ 728 MiB) como predeter
 
 Motivo (datos del informe): el port es exacto, pero en Chrome el mejor caso medido (WASM 4 hilos, aislado) da RTF 1,85 y WebGPU 10,6, frente a ≤ 0,8 y ≤ 0,5 exigidos; el cuello de botella es el cómputo en el navegador, no el tamaño de los pesos. La variante cuantizada (A, 168 MiB) no se midió en navegador ni se escuchó a ciegas, así que no se puede elegir A ni B. Consecuencia: `auto` no elige `moss-browser` hasta cumplir RNF-PERF-11; MOSS es opt-in con el tamaño visible. A y B se reabren con una medición nueva (CA-5 queda pendiente).
 
+**Actualización T-000b (2026-11-20):** la cuantizada se midió en Chrome: solo corre en WebGPU (WASM carece de `GatherBlockQuantized`), TTFA 0,9 s pero RTF 5,5 (≤ 0,5 exigido). No cumple RNF-PERF-11, así que la decisión se mantiene en C y no se enmienda a A. La escucha ciega (CP-SPIKE-3) sigue pendiente de personas. Ver informe T-000, sección 5.
+
 ## Consecuencias
 
 Al aceptar este ADR se fija el commit de Hugging Face y se genera el manifiesto con los hashes.
