@@ -53,4 +53,5 @@ traducen a esta jerarquía en `src/` antes de salir.
 | `AV_SERVER_ERROR` | External | El servidor TTS respondió con error o no responde | sí | "El servidor de voz no responde" | Revisar el servidor (`details.status`) |
 | `AV_SYNTHESIS_FAILED` | External | El motor falló al sintetizar un segmento | sí | "Algo falló al generar la voz. Reintentar" | Reportar con `details.engine` |
 | `AV_AUDIO_BLOCKED` | State | El navegador bloqueó el audio (sin gesto del usuario) | sí | "Pulsa play para escuchar" | No llamar a `play()` fuera de un gesto del usuario |
+| `AV_INVALID_NARRATION_TRANSITION` | State | Error de programación: transición no permitida de `Narration` (`details.from`, `details.action`); en producción se ignora y se registra | no | — | Reportar el bug |
 | `AV_ABORTED` | State | Operación cancelada (detener, saltar, cancelar descarga) | sí | — | Nada |
