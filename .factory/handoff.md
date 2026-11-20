@@ -1,11 +1,10 @@
 # Handoff
 
-- Hecho (constructor, issue #6 / T-013 + T-014), en `libs/reader/src/core/domain/`:
-  - `number-words.ts`: cardinales/ordinales/año es-en (< 1e12), concordancia es (un/una, -ientas).
-  - `TextNormalizer.ts`: `normalize(text, lang)` puro (RN-11): URLs→dominio, fechas, horas, monedas, %, ordinales, abreviaturas, números, emojis/símbolos. Solo es/en convierten números; otros idiomas solo limpieza.
-  - `Segment.ts`: `BlockRef` (alias string provisional hasta T-012), `TextSpan`, `createTextSpan` (valida 0≤start<end≤len, `AV_INVALID_TEXT_SPAN`), `Segment`.
-  - `Segmenter.ts`: `segment(blocks, lang)` (RN-05): ≤300 chars, corta oración → coma/; → palabra; un bloque nunca comparte segmento; spans apuntan al texto original.
-  - Specs de los tres. Arreglé también un error de typecheck previo en `ArticleDetector.spec.ts` (exactOptionalPropertyTypes).
-- Estado: `pnpm verify` en verde (136 tests).
-- No exportado aún desde `src/index.ts` (API pública con T-003/T-004).
-- Siguiente paso: T-012 (#8) debe definir el `BlockRef` real y reemplazar el alias; T-020/T-021 (#7) usa `Segment` en `Narration`.
+- Issue #3 / T-000 (constructor): **NO completado**. En esta sesión todos los comandos de Bash/PowerShell (node, python, nvidia-smi, git con cd) fueron denegados por falta de superficie de aprobación; solo funcionaron las herramientas de archivos. Sin poder ejecutar nada no se descargaron pesos ni se midió, y no se escribió el informe ni se aceptó ADR-0018 (no se inventan datos).
+- Dejé: `spikes/t000-moss-browser/scripts/download-models.mjs` (descarga de HF a `models/` con commit fijo obligatorio y verificación SHA-256 contra `lfs.oid`; escribe `models/manifest.json`; sin probar) y entradas en `.gitignore` (`models/`, `out/`, `.venv/` del spike).
+- Siguiente paso (en una sesión que SÍ pueda ejecutar comandos):
+  1. `pnpm install` en `spikes/t000-moss-browser`; resolver los commits HEAD actuales de los repos HF (API `https://huggingface.co/api/models/<repo>`, campo `sha`) y correr `node scripts/download-models.mjs <repo>@<sha> ...`.
+  2. venv Python 3.13 + `onnxruntime numpy sentencepiece`; correr `reference/reference.py` (ver README del spike) → golden.json.
+  3. `node src/node-parity.ts` (CA-1..3) y `node src/bench-browser.ts <pesos> <golden> <out.json>` (webgpu, webgpu-kvgpu, wasm-1hilo, wasm-4hilos-aislado; ídem variante cuantizada, CA-5).
+  4. Escribir `docs/03-arquitectura/spikes/T-000-informe.md` (CA-6) y pasar ADR-0018 a Aceptado con commit y manifiesto; actualizar backlog/README de docs.
+- Datos previos del humano para contrastar: frames idénticos Node vs WebGPU; CPU RTF ≈ 0,4 (~37 ms/frame); webgpu con KV en CPU 521 ms/frame, RTF 11. Equipo: Windows, RTX 4060 Ti, Chrome con WebGPU.

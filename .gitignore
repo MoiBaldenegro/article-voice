@@ -2,3 +2,6 @@
 .env
 .env.local
 node_modules/
+spikes/t000-moss-browser/models/
+spikes/t000-moss-browser/out/
+spikes/t000-moss-browser/.venv/
