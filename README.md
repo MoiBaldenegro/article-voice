@@ -34,7 +34,7 @@ framework o sin ninguno.
 
 ## Desarrollo
 
-Requisitos: Node >= 20 y [pnpm](https://pnpm.io).
+Requisitos: Node >= 22 (size-limit 14 usa `fs.glob`) y [pnpm](https://pnpm.io).
 
 ```sh
 pnpm install   # instala dependencias
