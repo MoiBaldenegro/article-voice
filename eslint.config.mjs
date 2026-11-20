@@ -82,6 +82,24 @@ export default tseslint.config(
     rules: restrict(['**/core/**'], 'infrastructure usa lib/reader solo por su index.ts.'),
   },
   {
+    // las specs de adaptadores pasan las suites de contrato de los puertos (outbound/testing)
+    files: ['src/infrastructure/**/*.spec.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: '/core/(?!domain/outbound/testing/)',
+              message:
+                'infrastructure usa lib/reader solo por su index.ts (salvo las suites de contrato).',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['src/ui/**/*.ts'],
     rules: restrict(
       ['**/core/**', '**/worker/**', '**/infrastructure/**'],

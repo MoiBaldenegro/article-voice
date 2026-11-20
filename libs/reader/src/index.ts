@@ -41,3 +41,6 @@ export type {
   DetectArticleInput,
   DetectArticleOutput,
 } from './core/application/DetectArticle.use-case.js';
+export { VoiceId } from './core/domain/value-objects/VoiceId.js';
+export { EngineKind } from './core/domain/value-objects/EngineKind.js';
+export { HttpsUrl } from './core/domain/value-objects/HttpsUrl.js';

@@ -205,6 +205,20 @@ export interface DomainErrorOptions {
 export class DomainValidationError extends DomainError {
 }
 
+// @public
+export class EngineKind extends ValueObject<{
+    value: EngineKindValue;
+}> {
+    // (undocumented)
+    static readonly DEFAULT: EngineKind;
+    // (undocumented)
+    static from(raw: string): EngineKind;
+    // (undocumented)
+    static of(value: string): EngineKind;
+    // (undocumented)
+    get value(): EngineKindValue;
+}
+
 // @public (undocumented)
 export interface ExtractedArticle {
     // (undocumented)
@@ -214,6 +228,18 @@ export interface ExtractedArticle {
     readonly title?: string;
     // (undocumented)
     readonly wordCount: number;
+}
+
+// @public
+export class HttpsUrl extends ValueObject<{
+    value: string;
+}> {
+    // (undocumented)
+    static from(raw: string, name?: string): HttpsUrl;
+    // (undocumented)
+    static of(value: string, name?: string): HttpsUrl;
+    // (undocumented)
+    get value(): string;
 }
 
 // @public (undocumented)
@@ -260,8 +286,6 @@ export class Narration {
     cancelPreparation(): void;
     // (undocumented)
     get cursor(): number;
-    // Warning: (ae-forgotten-export) The symbol "EngineKind" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     readonly engine: EngineKind;
     // (undocumented)
@@ -290,8 +314,6 @@ export class Narration {
     get state(): NarrationState;
     // (undocumented)
     stop(): void;
-    // Warning: (ae-forgotten-export) The symbol "VoiceId" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     readonly voice: VoiceId;
 }
@@ -365,6 +387,22 @@ export abstract class ValueObject<Props extends Readonly<Record<string, unknown>
     // (undocumented)
     protected readonly props: Readonly<Props>;
 }
+
+// @public
+export class VoiceId extends ValueObject<{
+    value: string;
+}> {
+    // (undocumented)
+    static from(raw: string): VoiceId;
+    // (undocumented)
+    static of(value: string): VoiceId;
+    // (undocumented)
+    get value(): string;
+}
+
+// Warnings were encountered during analysis:
+//
+// dist/index.d.ts:50:5 - (ae-forgotten-export) The symbol "EngineKindValue" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 
