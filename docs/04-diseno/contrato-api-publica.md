@@ -85,6 +85,7 @@ escrito nunca rompe la página.**
 | `article-voice:download-required` | `{ bytes }` — antes de confirmar (RN-15) |
 | `article-voice:download-progress` | `{ loaded, total }` |
 | `article-voice:ended` | `{}` |
+| `article-voice:fallback` | `{ from, to: 'web-speech', reason: 'no-server-url'\|'server-unreachable', label: 'voz del sistema' }` — se usa la voz del sistema en lugar del motor preferido (RN-13); la UI muestra la etiqueta |
 | `article-voice:error` | `{ code, message, details? }` |
 
 ## Estilo
