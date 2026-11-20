@@ -1,6 +1,6 @@
 <title>article-voice</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="Componente web que detecta el artículo de la página y lo lee en voz alta con MOSS-TTS-Nano, en el navegador del visitante.">
+<meta name="description" content="Componente web que detecta el artículo de la página y lo lee en voz alta con MOSS-TTS-Nano desde tu servidor o con la voz del sistema.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
@@ -211,7 +211,7 @@ footer .row { display: flex; flex-wrap: wrap; gap: 21px; justify-content: space-
     <div>
       <span class="label">Componente web · código abierto · MIT</span>
       <h1>Que cualquier artículo se pueda <em>escuchar</em>.</h1>
-      <p class="lede">Una etiqueta encuentra el artículo de tu página y lo lee en voz alta con MOSS-TTS-Nano, una voz neuronal que corre en el navegador de quien te lee. Sin servidores, sin costo por palabra y con cualquier framework.</p>
+      <p class="lede">Una etiqueta encuentra el artículo de tu página y lo lee en voz alta. Hoy la voz neuronal MOSS-TTS-Nano la genera tu propio servidor (<span class="mono">moss-server</span>) y, si no hay uno, el componente usa la voz del sistema y lo avisa. Correr MOSS dentro del navegador existe solo como experimento: todavía no es lo bastante rápido.</p>
       <div class="ctas">
         <a class="btn btn--accent" href="#demo"><span class="dot" aria-hidden="true"></span>Escuchar la demo</a>
         <a class="btn btn--quiet" href="https://github.com/MoiBaldenegro/article-voice">Ver el código</a>
@@ -269,7 +269,7 @@ footer .row { display: flex; flex-wrap: wrap; gap: 21px; justify-content: space-
           <button type="button" data-state="fallback" aria-pressed="false">Voz del sistema</button>
           <button type="button" data-state="error" aria-pressed="false">Error</button>
         </div>
-        <p class="demo-note">Maqueta: los estados son reales del contrato, el audio se simula. La versión publicada usará el componente de verdad.</p>
+        <p class="demo-note">Maqueta: los estados son reales del contrato, el audio se simula. La insignia «moss · webgpu» ilustra el motor experimental; el motor recomendado hoy es moss-server.</p>
       </div>
     </div>
   </div>
@@ -279,7 +279,7 @@ footer .row { display: flex; flex-wrap: wrap; gap: 21px; justify-content: space-
       <div class="sec-head">
         <span class="label">Cómo funciona</span>
         <h2>De la página al oído en tres pasos</h2>
-        <p class="muted">Todo ocurre dentro de la pestaña del visitante. La inferencia corre en un Web Worker para que la página no se trabe mientras suena.</p>
+        <p class="muted">La detección y la preparación del texto ocurren en la pestaña del visitante. La voz la genera tu servidor con MOSS o, como respaldo, el sistema operativo. El modelo en el navegador es experimental.</p>
       </div>
       <div class="pipeline">
         <div class="step">
@@ -296,8 +296,8 @@ footer .row { display: flex; flex-wrap: wrap; gap: 21px; justify-content: space-
         </div>
         <div class="step">
           <span class="n">3 · hablar</span>
-          <h3>Genera la voz en tu equipo</h3>
-          <p class="muted">MOSS-TTS-Nano produce 12,5 frames por segundo de audio; cada uno son 80 ms. Mientras suena uno, ya se calcula el siguiente.</p>
+          <h3>Genera la voz</h3>
+          <p class="muted">MOSS-TTS-Nano produce 12,5 frames por segundo de audio; cada uno son 80 ms. Mientras suena uno, ya se calcula el siguiente. Un servidor con MOSS lo logra a tiempo; el navegador, hoy, no.</p>
           <div class="frames" aria-hidden="true" id="frames"></div>
         </div>
       </div>
@@ -308,16 +308,16 @@ footer .row { display: flex; flex-wrap: wrap; gap: 21px; justify-content: space-
     <div class="wrap">
       <div class="sec-head">
         <span class="label">Motores de voz</span>
-        <h2>Siempre hay voz, incluso en equipos modestos</h2>
-        <p class="muted">Con <span class="mono">engine="auto"</span> el componente elige solo. Cuando usa la voz del sistema, lo dice en pantalla.</p>
+        <h2>Siempre hay voz; MOSS en tu servidor</h2>
+        <p class="muted">Con <span class="mono">engine="auto"</span> el componente elige entre <span class="mono">moss-server</span> y la voz del sistema, y nunca <span class="mono">moss-browser</span>. Cuando usa la voz del sistema, lo dice en pantalla.</p>
       </div>
       <div class="table-scroll">
         <table class="engines">
           <thead><tr><th>Motor</th><th>Dónde corre MOSS</th><th>Descarga del visitante</th><th>El texto sale del navegador</th><th>Para quién</th></tr></thead>
           <tbody>
-            <tr><td>moss-browser</td><td>En el navegador, con WebGPU o WASM</td><td>La voz, una sola vez</td><td class="yes">No</td><td>Por defecto. Privacidad y cero servidores</td></tr>
-            <tr><td>moss-server</td><td>En tu servidor (<span class="mono">/v1/audio/speech</span>)</td><td>Solo el audio</td><td class="no">Sí, a tu servidor</td><td>Sitios que no quieren que el visitante descargue nada</td></tr>
-            <tr><td>web-speech</td><td>No usa MOSS: voz del sistema operativo</td><td>Nada</td><td>Depende del sistema</td><td>Respaldo automático</td></tr>
+            <tr><td>moss-server <span class="chip ok">recomendado</span></td><td>En tu servidor (<span class="mono">/v1/audio/speech</span>)</td><td>Solo el audio</td><td class="no">Sí, a tu servidor</td><td>Voz MOSS fluida sin que el visitante descargue el modelo</td></tr>
+            <tr><td>web-speech <span class="chip">respaldo</span></td><td>No usa MOSS: voz del sistema operativo</td><td>Nada</td><td>Depende del sistema</td><td>Respaldo automático, con aviso visible</td></tr>
+            <tr><td>moss-browser <span class="chip">experimental</span></td><td>En el navegador, con WebAssembly (4 hilos) o WebGPU</td><td>La voz: ≈ 728 MiB (oficial) o ≈ 168 MiB (q4, solo WebGPU)</td><td class="yes">No</td><td>Solo con <span class="mono">engine="moss-browser"</span>. Aún no sostiene el audio sin cortes</td></tr>
           </tbody>
         </table>
       </div>
@@ -344,9 +344,9 @@ footer .row { display: flex; flex-wrap: wrap; gap: 21px; justify-content: space-
       </div>
       <div class="principles">
         <div class="principle"><h3>No descarga nada sin permiso</h3><p class="muted">Ni un byte del modelo hasta que el visitante pulsa play y ve el tamaño.</p></div>
-        <div class="principle"><h3>No envía tu texto a terceros</h3><p class="muted">Con el motor del navegador, el artículo no sale del dispositivo. Sin telemetría ni cookies.</p></div>
+        <div class="principle"><h3>No envía tu texto a terceros</h3><p class="muted">Con <span class="mono">moss-server</span> el texto viaja a tu servidor, no a terceros; con la voz del sistema depende del sistema, y solo con el experimental <span class="mono">moss-browser</span> no sale del dispositivo. Sin telemetría ni cookies.</p></div>
         <div class="principle"><h3>No ejecuta pesos alterados</h3><p class="muted">Cada archivo del modelo se comprueba con SHA-256 contra un manifiesto incluido en el paquete.</p></div>
-        <div class="principle"><h3>No te deja sin voz</h3><p class="muted">Si el equipo no puede con el modelo, usa la voz del sistema y lo indica.</p></div>
+        <div class="principle"><h3>No te deja sin voz</h3><p class="muted">Si no hay servidor de voz, usa la voz del sistema y lo indica.</p></div>
       </div>
     </div>
   </section>
@@ -356,21 +356,26 @@ footer .row { display: flex; flex-wrap: wrap; gap: 21px; justify-content: space-
       <div class="sec-head">
         <span class="label">Estado del proyecto</span>
         <h2>En desarrollo, con los números a la vista</h2>
-        <p class="muted">Antes de escribir el componente se midió si MOSS puede hablar en un navegador sin cortes. Esto es lo que hay hasta ahora.</p>
+        <p class="muted">Antes de escribir el componente se midió si MOSS puede hablar en un navegador sin cortes (informe T-000). No puede todavía, y por eso el motor recomendado es el servidor. Estas son las cifras, en Chrome 157 con un i7-12700 y una RTX 4060 Ti.</p>
       </div>
       <div class="status">
         <div class="measures" aria-label="Mediciones del spike T-000">
           <div class="measure"><span>Tokenizador portado a TypeScript, idéntico al oficial</span><span class="v ok">9/9</span></div>
           <div class="measure"><span>Frames generados idénticos al runtime oficial</span><span class="v ok">bit a bit</span></div>
           <div class="measure"><span>Primer audio en CPU, con el modelo cargado</span><span class="v ok">≈ 0,22 s</span></div>
-          <div class="measure"><span>Velocidad en CPU de escritorio (RTF)</span><span class="v ok">0,4</span></div>
-          <div class="measure"><span>Velocidad con WebGPU, primera versión (RTF)</span><span class="v warn">optimizando</span></div>
-          <div class="measure"><span>Descarga de la voz (variante en evaluación)</span><span class="v">168–685 MB</span></div>
+          <div class="measure"><span>Velocidad en CPU nativa, fuera del navegador (RTF)</span><span class="v ok">0,4</span></div>
+          <div class="measure"><span>Navegador · WebAssembly 4 hilos, modelo oficial (RTF)</span><span class="v warn">1,85</span></div>
+          <div class="measure"><span>Navegador · WebGPU, modelo oficial (RTF)</span><span class="v warn">10,6</span></div>
+          <div class="measure"><span>Navegador · WebGPU, variante q4 (RTF)</span><span class="v warn">5,5</span></div>
+          <div class="measure"><span>Primer audio: WASM 4 hilos · q4 en WebGPU</span><span class="v ok">0,9 s · 0,9 s</span></div>
+          <div class="measure"><span>Descarga de la voz: oficial · q4</span><span class="v">728 · 168 MiB</span></div>
+          <div class="measure"><span>La q4 corre en WebAssembly</span><span class="v warn">no</span></div>
+          <div class="measure"><span>Para sonar sin cortes el RTF debe ser</span><span class="v">≤ 1</span></div>
         </div>
         <ol class="roadmap">
-          <li class="now"><span class="when">ahora</span><span>Spike T-000: MOSS medido en el navegador</span></li>
-          <li><span class="when">0.1.0</span><span>Detección, lectura con pausa y progreso, motor en el navegador</span></li>
-          <li><span class="when">0.2.0</span><span>Servidor propio, voz del sistema, resaltado, velocidad y voces</span></li>
+          <li class="now"><span class="when">ahora</span><span>Spike T-000 y q4 medidos: en el navegador MOSS aún no es fluido</span></li>
+          <li><span class="when">0.1.0</span><span>Detección, lectura con pausa y progreso, <span class="mono">moss-server</span> y voz del sistema</span></li>
+          <li><span class="when">0.2.0</span><span>Resaltado, velocidad y voces; <span class="mono">moss-browser</span> si se logra RTF ≤ 1</span></li>
           <li><span class="when">0.3.0</span><span>Temas, inserción automática, ejemplos por framework</span></li>
           <li><span class="when">1.0.0</span><span>Contrato estable y accesibilidad AA verificada</span></li>
         </ol>
@@ -382,9 +387,10 @@ footer .row { display: flex; flex-wrap: wrap; gap: 21px; justify-content: space-
     <div class="wrap">
       <div class="sec-head"><span class="label">Preguntas</span><h2>Lo que suelen preguntar</h2></div>
       <div class="faqs">
-        <details class="faq"><summary>¿Cuánto pesa?</summary><p>El script que carga tu página pesa menos de 15 kB. La voz se descarga aparte, solo si el visitante pulsa play, y queda en la caché del navegador para los demás artículos de tu sitio.</p></details>
+        <details class="faq"><summary>¿Cuánto pesa?</summary><p>El script que carga tu página pesa menos de 15 kB. Con <span class="mono">moss-server</span> el visitante no descarga ningún modelo, solo el audio. Si activas el experimental <span class="mono">moss-browser</span>, el modelo (≈ 728 MiB; ≈ 168 MiB la q4, solo WebGPU) se descarga aparte, solo si pulsa play y acepta, y queda en la caché.</p></details>
         <details class="faq"><summary>¿En qué idiomas lee?</summary><p>MOSS-TTS-Nano habla 20 idiomas. La versión 1 prepara el texto con cuidado en español e inglés; los demás funcionan con una preparación más simple.</p></details>
-        <details class="faq"><summary>¿Qué navegadores soporta?</summary><p>Chrome, Edge y Firefox en sus dos últimas versiones y Safari 17 o posterior. Donde no hay WebGPU usa WebAssembly, y si tampoco alcanza, la voz del sistema.</p></details>
+        <details class="faq"><summary>¿Qué navegadores soporta?</summary><p>Chrome, Edge y Firefox en sus dos últimas versiones y Safari 17 o posterior. Con <span class="mono">moss-server</span> basta cualquiera que reproduzca audio; la voz del sistema depende de la API Web Speech del navegador. <span class="mono">moss-browser</span> pide WebGPU o WebAssembly y, hoy, un equipo potente.</p></details>
+        <details class="faq"><summary>¿De verdad corre sin servidores?</summary><p>No, todavía. El camino recomendado necesita un servidor con MOSS. Se probó correrlo en el navegador y no llega a tiempo real (RTF 1,85 en el mejor caso, 5,5 con la q4). Se investiga cómo acelerarlo; hasta entonces es experimental y <span class="mono">engine="auto"</span> no lo elige.</p></details>
         <details class="faq"><summary>¿Las voces imitan a personas reales?</summary><p>No. El paquete no incluye voces clonadas de personas o personajes reconocibles. Las voces se grabarán con el consentimiento de quien presta su voz.</p></details>
         <details class="faq"><summary>¿Es oficial de OpenMOSS?</summary><p>No. Es un proyecto independiente que usa el modelo MOSS-TTS-Nano, publicado por OpenMOSS bajo licencia Apache-2.0, con su atribución.</p></details>
       </div>
