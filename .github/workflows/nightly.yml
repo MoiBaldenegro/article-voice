@@ -1,0 +1,50 @@
+name: Nightly
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  nightly:
+    runs-on: ubuntu-latest
+    environment: npm-publish
+    permissions:
+      contents: read
+      id-token: write # Trusted Publishing (OIDC) y provenance
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+      - run: npm install -g npm@^11.5.1
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm verify
+      - run: pnpm api:check
+      - run: pnpm size
+      - name: ¿Hay changesets pendientes?
+        id: pending
+        run: |
+          if ls .changeset/*.md 2>/dev/null | grep -qv README.md; then
+            echo "has=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Versión snapshot (next)
+        if: steps.pending.outputs.has == 'true'
+        run: pnpm changeset version --snapshot nightly
+      - name: Publicar en la etiqueta next
+        if: steps.pending.outputs.has == 'true'
+        env:
+          NPM_CONFIG_PROVENANCE: 'true'
+        run: pnpm build && pnpm changeset publish --tag next --no-git-tag

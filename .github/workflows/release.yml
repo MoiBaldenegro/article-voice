@@ -1,0 +1,67 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment: npm-publish
+    outputs:
+      published: ${{ steps.changesets.outputs.published }}
+      version: ${{ steps.version.outputs.version }}
+    permissions:
+      contents: write # tags, GitHub Releases y rama de versión
+      pull-requests: write # PR "Version Packages"
+      id-token: write # Trusted Publishing (OIDC) y provenance
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+      # Trusted Publishing requiere npm >= 11.5.1
+      - run: npm install -g npm@^11.5.1
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm verify
+      - run: pnpm api:check
+      - uses: changesets/action@v1
+        id: changesets
+        with:
+          version: pnpm changeset version
+          publish: pnpm release
+          title: 'chore: Version Packages'
+          commit: 'chore: Version Packages'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_PROVENANCE: 'true'
+      - id: version
+        if: steps.changesets.outputs.published == 'true'
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+  smoke:
+    needs: release
+    if: needs.release.outputs.published == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Instalar desde npm y cargar el paquete
+        env:
+          VERSION: ${{ needs.release.outputs.version }}
+        run: |
+          mkdir smoke && cd smoke
+          npm init -y > /dev/null
+          for i in 1 2 3 4 5; do npm install "article-voice@${VERSION}" && break || sleep 20; done
+          node --input-type=module -e "await import('article-voice'); console.log('ok')"

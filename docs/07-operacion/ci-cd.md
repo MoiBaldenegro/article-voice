@@ -46,3 +46,32 @@ flowchart LR
 - `permissions` mínimos por job (por defecto `contents: read`).
 - El job de publicación corre solo en `main` y en el entorno protegido `npm-publish`.
 - Dependabot semanal para `devDependencies` y GitHub Actions.
+
+## `nightly.yml` (cada noche y a demanda)
+
+Corre `verify`, `api:check` y `size`. Si hay changesets pendientes, publica una versión snapshot
+(`0.0.0-nightly-AAAAMMDD…`) con la etiqueta `next`, vía Trusted Publishing y provenance. Sin changesets
+pendientes no publica nada.
+
+## Cómo publicar `0.0.1-next.0` (primera prerelease)
+
+Configuración única (la hace una persona con acceso al paquete):
+
+1. En npmjs.com → paquete `article-voice` → Settings → **Trusted Publisher**: GitHub Actions,
+   repositorio `MoiBaldenegro/article-voice`, workflow `release.yml` (y `nightly.yml`), entorno `npm-publish`.
+   Si el paquete aún no existe, la primera publicación debe hacerse una vez a mano para crearlo.
+2. En GitHub → Settings → Environments: crear `npm-publish` (solo rama `main`).
+3. Settings → Actions → General: permitir que Actions cree PRs.
+
+Publicación:
+
+1. En una rama: `pnpm changeset pre enter next`, luego `pnpm changeset` (patch, nota para el
+   usuario). Commit de `.changeset/` y PR.
+2. Al fusionar a `main`, `release.yml` abre el PR **Version Packages**, que sube la versión a
+   `0.0.1-next.0` y escribe el CHANGELOG.
+3. Al fusionar ese PR, `release.yml` hace build y `changeset publish` con la etiqueta `next`
+   (provenance, sin token), crea el tag `v0.0.1-next.0` y corre la prueba de humo.
+4. Verificar: `npm view article-voice dist-tags` muestra `next: 0.0.1-next.0`.
+5. Para salir de prerelease: `pnpm changeset pre exit` en un PR.
+
+Validar los workflows en local: `actionlint .github/workflows/*.yml`.
