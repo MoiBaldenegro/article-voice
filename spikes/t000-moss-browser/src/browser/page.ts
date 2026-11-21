@@ -10,7 +10,7 @@ interface BenchConfig {
   segments: string[];
   voice: string;
   replayDraws?: number[][];
-  codecPolicy: 'single' | 'adaptive';
+  codecPolicy: string;
   play: boolean;
   variant?: 'official' | 'q4';
   capture?: boolean;
@@ -35,7 +35,30 @@ async function runBench(cfg: BenchConfig): Promise<unknown> {
       worker.addEventListener('message', h);
     });
 
-  worker.postMessage({ type: 'init', backend: cfg.backend, threads: cfg.threads, modelBase: '/models/', gpuKvCache: cfg.gpuKvCache, variant: cfg.variant });
+  const viaWorker = cfg.codecPolicy.endsWith(':worker');
+  let codecWorker: Worker | null = null;
+  const codecDone = new Map<number, number>();
+  let lastChunkAt = 0;
+  let firstChunkAtPage = -1;
+  worker.postMessage({ type: 'init', backend: cfg.backend, threads: viaWorker ? Math.max(1, cfg.threads - 1) : cfg.threads, modelBase: '/models/', gpuKvCache: cfg.gpuKvCache, variant: cfg.variant, only: viaWorker ? ['prefill', 'decode', 'local_fixed'] : undefined });
+  if (viaWorker) {
+    codecWorker = new Worker('/dist/worker.js', { type: 'module' });
+    // El códec va en su propio worker (otro runtime de ORT) para solaparse con la generación.
+    codecWorker.postMessage({ type: 'init', backend: 'wasm', threads: 1, modelBase: '/models/', gpuKvCache: false, variant: cfg.variant, only: ['codec_step'] });
+    await new Promise<void>((res, rej) => {
+      codecWorker!.onmessage = (e) => (e.data.type === 'ready' ? res() : e.data.type === 'error' && rej(new Error(e.data.message)));
+    });
+    const ch = new MessageChannel();
+    worker.postMessage({ type: 'port', role: 'tts' }, [ch.port1]);
+    codecWorker.postMessage({ type: 'port', role: 'codec' }, [ch.port2]);
+    codecWorker.addEventListener('message', (e) => {
+      if (e.data.type === 'chunk') {
+        lastChunkAt = performance.now();
+        if (firstChunkAtPage < 0) firstChunkAtPage = lastChunkAt;
+        handle(e);
+      } else if (e.data.type === 'codec-end') codecDone.set(e.data.segment, e.data.codecMs);
+    });
+  }
   const ready: any = await wait((d) => d.type === 'ready');
   log(`listo en ${ready.initMs} ms (${cfg.backend}, hilos=${cfg.threads}, aislado=${ready.crossOriginIsolated})`);
 
@@ -49,7 +72,7 @@ async function runBench(cfg: BenchConfig): Promise<unknown> {
   const captured: Float32Array[][] = [];
   const parity: { segment: number; frames: number[][] }[] = [];
 
-  worker.addEventListener('message', (e) => {
+  const handle = (e: MessageEvent) => {
     const d = e.data;
     if (d.type === 'chunk' && cfg.capture) captured.push(d.channels);
     if (d.type === 'chunk' && cfg.play) {
@@ -74,11 +97,19 @@ async function runBench(cfg: BenchConfig): Promise<unknown> {
       segments.push({ ...d, frames: d.frames.length });
       parity.push({ segment: d.segment, frames: d.frames });
     }
-  });
+  };
+  worker.addEventListener('message', handle);
 
   const t0 = performance.now();
   worker.postMessage({ type: 'synth', segments: cfg.segments, voice: cfg.voice, replayDraws: cfg.replayDraws, seed: 7, codecPolicy: cfg.codecPolicy });
   const done: any = await wait((d) => d.type === 'done');
+  if (viaWorker) {
+    while (codecDone.size < cfg.segments.length) await new Promise((r) => setTimeout(r, 10));
+    done.totalMs = Math.round(lastChunkAt - t0);
+    done.firstChunkMs = Math.round(firstChunkAtPage - t0);
+    segments.forEach((s) => (s.codecMs = codecDone.get(s.segment) ?? 0));
+  }
+  codecWorker?.terminate();
   // Esperar a que suene lo programado para contar underruns hasta el final.
   if (cfg.play) await new Promise((r) => setTimeout(r, Math.max(0, (nextTime - ctx.currentTime) * 1000) + 200));
   worker.terminate();

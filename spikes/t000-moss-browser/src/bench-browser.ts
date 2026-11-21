@@ -34,7 +34,7 @@ interface Config {
   threads: number;
   isolated: boolean;
   gpuKvCache: boolean;
-  codecPolicy: 'single' | 'adaptive';
+  codecPolicy: string;
   variant?: 'official' | 'q4';
 }
 const CONFIGS: Config[] = [
@@ -45,6 +45,19 @@ const CONFIGS: Config[] = [
   { name: 'q4-webgpu', backend: 'webgpu', threads: 1, isolated: false, gpuKvCache: false, codecPolicy: 'adaptive', variant: 'q4' },
   { name: 'q4-wasm-1hilo', backend: 'wasm', threads: 1, isolated: false, gpuKvCache: false, codecPolicy: 'adaptive', variant: 'q4' },
   { name: 'q4-wasm-4hilos-aislado', backend: 'wasm', threads: 4, isolated: true, gpuKvCache: false, codecPolicy: 'adaptive', variant: 'q4' },
+  { name: 'wasm4-batch8', backend: 'wasm', threads: 4, isolated: true, gpuKvCache: false, codecPolicy: 'batch:8' },
+  { name: 'wasm4-batch8-async', backend: 'wasm', threads: 4, isolated: true, gpuKvCache: false, codecPolicy: 'batch:8:async' },
+  { name: 'wasm4-batch8-worker', backend: 'wasm', threads: 4, isolated: true, gpuKvCache: false, codecPolicy: 'batch:8:worker' },
+  { name: 'wasm4-batch4-worker', backend: 'wasm', threads: 4, isolated: true, gpuKvCache: false, codecPolicy: 'batch:4:worker' },
+  { name: 'wasm4-batch16', backend: 'wasm', threads: 4, isolated: true, gpuKvCache: false, codecPolicy: 'batch:16' },
+  { name: 'webgpu-batch8', backend: 'webgpu', threads: 1, isolated: false, gpuKvCache: false, codecPolicy: 'batch:8' },
+  { name: 'webgpu-kvgpu-batch8', backend: 'webgpu', threads: 1, isolated: false, gpuKvCache: true, codecPolicy: 'batch:8' },
+  { name: 'q4-webgpu-batch8', backend: 'webgpu', threads: 1, isolated: false, gpuKvCache: false, codecPolicy: 'batch:8', variant: 'q4' },
+  { name: 'q4-webgpu-kvgpu-batch8', backend: 'webgpu', threads: 1, isolated: false, gpuKvCache: true, codecPolicy: 'batch:8', variant: 'q4' },
+  { name: 'webgpu-kvgpu-batch8-worker', backend: 'webgpu', threads: 2, isolated: false, gpuKvCache: true, codecPolicy: 'batch:8:worker' },
+  { name: 'webgpu-batch8-worker', backend: 'webgpu', threads: 2, isolated: false, gpuKvCache: false, codecPolicy: 'batch:8:worker' },
+  { name: 'q4-webgpu-kvgpu-batch8-worker', backend: 'webgpu', threads: 2, isolated: false, gpuKvCache: true, codecPolicy: 'batch:8:worker', variant: 'q4' },
+  { name: 'q4-webgpu-batch8-worker', backend: 'webgpu', threads: 2, isolated: false, gpuKvCache: false, codecPolicy: 'batch:8:worker', variant: 'q4' },
 ].filter((c) => !only || only.split(',').includes(c.name)) as Config[];
 
 function startServer(isolated: boolean, port: number): Promise<ChildProcess> {

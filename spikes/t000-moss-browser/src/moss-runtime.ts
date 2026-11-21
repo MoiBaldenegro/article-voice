@@ -12,6 +12,13 @@ export interface OrtTensor {
   readonly data: ArrayLike<number | bigint>;
   readonly dims: readonly number[];
   readonly type: string;
+  readonly location?: string;
+  dispose?(): void;
+}
+
+/** Libera los tensores que viven en la GPU (KV cache): sin esto cada paso deja buffers sin liberar. */
+function disposeAll(tensors: Record<string, OrtTensor>): void {
+  for (const t of Object.values(tensors)) if (t.location === 'gpu-buffer') t.dispose?.();
 }
 
 export interface OrtSession {
@@ -113,6 +120,7 @@ export class MossRuntime {
     ttsMeta: TtsMeta,
     codecMeta: CodecMeta,
     createSession: SessionFactory,
+    only?: SessionRole[],
   ): Promise<MossRuntime> {
     const tts = (name: string) => ({ file: ttsMeta.files[name]!, data: ttsMeta.external_data_files[ttsMeta.files[name]!] ?? [] });
     const cod = (name: string) => ({ file: codecMeta.files[name]!, data: codecMeta.external_data_files[codecMeta.files[name]!] ?? [] });
@@ -124,7 +132,7 @@ export class MossRuntime {
       ['codec_full', cod('decode_full')],
     ];
     const sessions = {} as Record<SessionRole, OrtSession>;
-    for (const [role, spec] of specs) if (spec.file) sessions[role] = await createSession(role, spec.file, spec.data);
+    for (const [role, spec] of specs) if (spec.file && (!only || only.includes(role))) sessions[role] = await createSession(role, spec.file, spec.data);
     return new MossRuntime(ort, manifest, ttsMeta, codecMeta, sessions);
   }
 
@@ -227,9 +235,11 @@ export class MossRuntime {
       timings.decodeMs.push(now() - t0);
       globalHidden = lastHidden(decoded['global_hidden']!, hidden);
       pastLength += 1;
+      disposeAll(past);
       past = {};
       for (const name of this.tts.onnx.decode_output_names.slice(1)) past[name.replace('present_', 'past_')] = decoded[name]!;
     }
+    disposeAll(past);
     return { frames, timings };
   }
 

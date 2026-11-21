@@ -1,5 +1,4 @@
 # Handoff
 
-- T-022 hecho (issue #20), `pnpm verify` verde (299 tests). En `libs/reader/src/core/application/`: `NarrationSession` (une Narration + SpeechEngine + AudioOutput, síntesis con lookahead 2), `NarrationRegistry` (una sola activa), `narration.use-cases.ts` (PlayNarration, Pause/Resume/Stop/SeekNarration) y su spec con dobles.
-- No se exportó nada en el entry público (sin cambio de API).
-- Siguiente paso: T-023 (WebAudioOutput) y T-041 (ArticleVoiceElement) que debe cablear estos casos de uso en `src/compose.ts`; T-035 sigue pendiente.
+- T-035 (issue #25), parcial: aplicado el parche del intento 1 al spike (`spikes/t000-moss-browser/src`: códec en worker y por lotes). Cifras (3 repeticiones, mediana) en `docs/03-arquitectura/spikes/T-000-informe.md` §9: RTF base 1,84 → batch4-worker 1,18 (aún no tiempo real; mejor corrida 0,82).
+- Pendiente: KV en GPU sin Invalid Buffer, q4+WebGPU+KV GPU, WebNN; repetir en máquina sin carga ajena.

@@ -4,7 +4,7 @@
  * Mensajes: init → ready; synth (segmentos) → chunk* → segment-done* → done.
  */
 import { SentencePieceBpe } from '../sentencepiece.ts';
-import { MossRuntime, prepareText, type OrtLike, type OrtSession, type MossManifest, type OrtTensor } from '../moss-runtime.ts';
+import { MossRuntime, prepareText, type SessionRole, type OrtLike, type OrtSession, type MossManifest, type OrtTensor } from '../moss-runtime.ts';
 
 declare const self: DedicatedWorkerGlobalScope;
 
@@ -15,6 +15,7 @@ interface InitMsg {
   modelBase: string; // termina en '/', contiene MOSS-TTS-Nano-100M-ONNX/ y MOSS-Audio-Tokenizer-Nano-ONNX/
   gpuKvCache: boolean;
   variant?: 'official' | 'q4';
+  only?: SessionRole[];
 }
 interface SynthMsg {
   type: 'synth';
@@ -22,10 +23,11 @@ interface SynthMsg {
   voice: string;
   replayDraws?: number[][]; // por segmento, para comprobar paridad
   seed: number;
-  codecPolicy: 'single' | 'adaptive';
+  codecPolicy: string; // 'single' | 'adaptive' | 'batch:N' | 'batch:N:async'
 }
 
 let runtime: MossRuntime | null = null;
+let codecPort: MessagePort | null = null;
 let tokenizer: SentencePieceBpe | null = null;
 let manifest: MossManifest | null = null;
 
@@ -119,7 +121,7 @@ async function init(msg: InitMsg): Promise<void> {
     const session = await ort.InferenceSession.create(`${base}${file}`, options);
     sessionTimes[role] = Math.round(performance.now() - ts);
     return session as unknown as OrtSession;
-  });
+  }, msg.only);
   self.postMessage({
     type: 'ready',
     initMs: Math.round(performance.now() - t0),
@@ -145,12 +147,42 @@ async function synth(msg: SynthMsg): Promise<void> {
     const draws = msg.replayDraws?.[s];
     let k = 0;
     const rng = draws ? { random: () => draws[k++] ?? 0.5 } : mulberry32(msg.seed + s);
-    const stream = rt.createCodecStream();
+    const bm = /^batch:(\d+)(:async|:worker)?$/.exec(msg.codecPolicy);
+    const viaWorker = bm?.[2] === ':worker';
+    const batchN = bm ? Number(bm[1]) : 0;
+    const stream = viaWorker ? null : rt.createCodecStream();
+    if (viaWorker) codecPort!.postMessage({ type: 'start', segment: s });
     const pending: number[][] = [];
+    let emittedFrames = 0;
     let codecMs = 0;
 
+    const asyncCodec = bm?.[2] === ':async';
+    let chain: Promise<void> = Promise.resolve();
+    const emit = async (batch: number[][]) => {
+      const tc = performance.now();
+      const channels = await stream!.push(batch);
+      codecMs += performance.now() - tc;
+      if (channels[0]!.length === 0) return;
+      if (firstChunkAt < 0) firstChunkAt = performance.now();
+      emittedSamples += channels[0]!.length;
+      self.postMessage({ type: 'chunk', segment: s, channels }, channels.map((c) => c.buffer));
+    };
     const flush = async (force: boolean) => {
       if (pending.length === 0) return;
+      if (batchN > 0) {
+        // Lotes fijos: el primero sale con 1 frame para bajar el primer audio.
+        const size = firstChunkAt < 0 && emittedFrames === 0 ? 1 : batchN;
+        if (!force && pending.length < size) return;
+        const batch = pending.splice(0);
+        emittedFrames += batch.length;
+        if (viaWorker) {
+          codecPort!.postMessage({ type: 'frames', segment: s, frames: batch });
+          return;
+        }
+        if (asyncCodec) chain = chain.then(() => emit(batch));
+        else await emit(batch);
+        return;
+      }
       let budget = 1;
       if (msg.codecPolicy === 'adaptive' && firstChunkAt >= 0) {
         // Misma política que la referencia: cuanto más adelantado va el audio, más frames por llamada.
@@ -158,14 +190,7 @@ async function synth(msg: SynthMsg): Promise<void> {
         budget = lead < 0.2 ? 1 : lead < 0.55 ? 2 : lead < 1.1 ? 4 : 8;
       }
       while (pending.length > 0 && (force || pending.length >= budget)) {
-        const batch = pending.splice(0, force ? pending.length : budget);
-        const tc = performance.now();
-        const channels = await stream.push(batch);
-        codecMs += performance.now() - tc;
-        if (channels[0]!.length === 0) continue;
-        if (firstChunkAt < 0) firstChunkAt = performance.now();
-        emittedSamples += channels[0]!.length;
-        self.postMessage({ type: 'chunk', segment: s, channels }, channels.map((c) => c.buffer));
+        await emit(pending.splice(0, force ? pending.length : budget));
         if (!force) break;
       }
     };
@@ -175,6 +200,8 @@ async function synth(msg: SynthMsg): Promise<void> {
       await flush(false);
     });
     await flush(true);
+    await chain;
+    if (viaWorker) codecPort!.postMessage({ type: 'end', segment: s });
     self.postMessage({
       type: 'segment-done',
       segment: s,
@@ -191,9 +218,37 @@ async function synth(msg: SynthMsg): Promise<void> {
   self.postMessage({ type: 'done', totalMs: Math.round(performance.now() - start), firstChunkMs: Math.round(firstChunkAt - start), emittedS: emittedSamples / sr });
 }
 
+/** Rol «códec»: decodifica frames recibidos por el puerto y envía el audio a la página. */
+function serveCodec(port: MessagePort): void {
+  let stream: ReturnType<MossRuntime['createCodecStream']> | null = null;
+  let chain: Promise<void> = Promise.resolve();
+  let codecMs = 0;
+  port.onmessage = (ev) => {
+    const d = ev.data;
+    chain = chain.then(async () => {
+      if (d.type === 'start') {
+        stream = runtime!.createCodecStream();
+        codecMs = 0;
+      } else if (d.type === 'frames') {
+        const t = performance.now();
+        const channels = await stream!.push(d.frames);
+        codecMs += performance.now() - t;
+        if (channels[0]!.length > 0) self.postMessage({ type: 'chunk', segment: d.segment, channels }, channels.map((c) => c.buffer));
+      } else if (d.type === 'end') {
+        self.postMessage({ type: 'codec-end', segment: d.segment, codecMs: Math.round(codecMs) });
+      }
+    }).catch((err) => self.postMessage({ type: 'error', message: String((err as Error)?.stack ?? err) }));
+  };
+}
+
 self.onmessage = async (e: MessageEvent<InitMsg | SynthMsg>) => {
   try {
-    if (e.data.type === 'init') await init(e.data);
+    if ((e.data as any).type === 'port') {
+      const port: MessagePort = (e as any).ports[0];
+      if ((e.data as any).role === 'tts') codecPort = port;
+      else serveCodec(port);
+    }
+    else if (e.data.type === 'init') await init(e.data);
     else await synth(e.data);
   } catch (err) {
     self.postMessage({ type: 'error', message: String((err as Error)?.stack ?? err) });
