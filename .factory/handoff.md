@@ -1,5 +1,5 @@
 # Handoff
 
-- #41 hecho: examples/astro y examples/react instalan y arrancan de verdad. Corregido: dependencia `link:../..`, texto del artículo ≥120 palabras. Nuevo `pnpm test:examples` (test/examples, Playwright) verde: elemento registrado, `article-voice:ready`, words>=120, sin errores de página.
-- Los `pnpm-lock.yaml` de cada ejemplo quedan generados (prettier los ignora).
-- Siguiente paso: añadir test:examples a CI si se quiere; verificar Media Session con teclas multimedia reales.
+- #45 (planificación): revisado el producto contra docs/01-producto/vision.md. Alcance 0.1.0 completo, `pnpm verify` verde (359 pruebas), README con instalar/correr/probar. Marcado productionReady=true; docs/backlog.md actualizado.
+- Pendientes humanos: proteger `main`, configurar publicación npm, verificar moss-server con pesos reales.
+- Siguiente paso: opcional (post-MVP) T-055, T-054, T-058, test:examples en CI.
