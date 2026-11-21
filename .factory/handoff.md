@@ -1,4 +1,5 @@
 # Handoff
 
-- #28 (T-035c) hecho: medido q4+WebGPU+KV GPU (RTF 3,02), WebNN oficial (3,43) y q4 en WebNN (no carga). Ninguno cumple RTF<1; cifras en informe T-000 §9 (puntos 5-7). Spike con backend `webnn` en `spikes/t000-moss-browser/src`.
-- Siguiente paso: decidir si se sigue optimizando WASM+worker (mejor 1,18) o se deja moss-browser experimental para 0.1.0.
+- #30 (planificación) hecho: revisé el producto contra la visión; no está listo para producción. Actualicé docs/architecture.md y docs/backlog.md y propuse 7 issues (README real y E2E con servidor falso, p0).
+- No pude ejecutar `gh` ni `git log` (permiso denegado): no verifiqué los issues abiertos; la fábrica debe descartar duplicados.
+- Siguiente paso: construir el README real y la prueba E2E.
