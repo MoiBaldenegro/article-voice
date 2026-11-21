@@ -25,9 +25,11 @@ createServer(async (req, res) => {
   const p = new URL(req.url, 'http://x').pathname;
   const file = p.startsWith('/dist/')
     ? join(root, p)
-    : p === '/plain.html'
-      ? join(here, 'fixtures/plain.html')
-      : join(out, p === '/vite.html' ? 'vite.html' : p);
+    : p === '/snippet.html'
+      ? join(here, 'fixtures/snippet.html')
+      : p === '/plain.html'
+        ? join(here, 'fixtures/plain.html')
+        : join(out, p === '/vite.html' ? 'vite.html' : p);
   try {
     res.writeHead(200, { 'content-type': types[extname(file)] ?? 'application/octet-stream' });
     res.end(await readFile(file));

@@ -1,5 +1,5 @@
 # Handoff
 
-- #30 (planificación) hecho: revisé el producto contra la visión; no está listo para producción. Actualicé docs/architecture.md y docs/backlog.md y propuse 7 issues (README real y E2E con servidor falso, p0).
-- No pude ejecutar `gh` ni `git log` (permiso denegado): no verifiqué los issues abiertos; la fábrica debe descartar duplicados.
-- Siguiente paso: construir el README real y la prueba E2E.
+- #31 hecho: README reescrito (estado 0.1.0 pre-lanzamiento, motores, npm/CDN, atributos, desarrollo). Prueba nueva en test/package (snippet.html) que carga dist/index.js y comprueba el elemento. `pnpm test:package` y `pnpm verify` verdes.
+- Nota: el contrato menciona dist/cdn/article-voice.js, que no existe; el README usa dist/index.js.
+- Siguiente paso: #32 (E2E con servidor falso), #33, #34.
