@@ -157,5 +157,17 @@ Conclusiones:
    `gpu-buffer` del KV de cada paso (`disposeAll` en `moss-runtime.ts`). RTF mediana **4,80** (4,70–4,87, muy estable),
    ≈382 ms/frame, memoria Chrome ≈770 MB. Es peor que WASM con worker (1,18): con KV en GPU el cuello de botella es el
    `local_fixed`/sincronización por frame, no la copia del KV. No cumple RNF-PERF-11; `auto` sigue sin elegir moss-browser.
-5. Pasos 3 (q4 con KV en GPU) y 4 (WebNN) **no se midieron**: ver #28.
+5. **q4 + WebGPU + KV en GPU (T-035c, 2026-11-21).** `q4-webgpu-kvgpu-batch8-worker`, 3 repeticiones, mismo Chrome/GPU:
+   RTF 2,71 / 3,03 / 3,02 → **mediana 3,02**, ≈244 ms/frame, TTFA ≈1,2 s, 61-62 vacíos (≈78 s), memoria ≈720 MB.
+   Mejora frente a oficial+KV GPU (4,80) y frente a q4 sin KV GPU (5,5), pero **no cumple RTF<1** y sigue peor que WASM
+   con worker (1,18).
+6. **WebNN (T-035c).** Chrome 157 expone `navigator.ml` (gpu/cpu/npu crean contexto) con
+   `--enable-features=WebMachineLearningNeuralNetwork` y el EP `webnn` (`deviceType: 'gpu'`) de onnxruntime-web 1.31.1.
+   Oficial fp32 con `webnn-gpu-batch8-worker`: carga y da frames idénticos a Python (55/55); RTF 3,43 / 2,47 / 3,45 →
+   **mediana 3,43**, ≈249 ms/frame. **q4 no carga en WebNN**: `GatherBlockQuantized` ('/wte/Gather_Q4') sin proveedor
+   asignado, así que ni q4 ni sus pesos más pequeños aplican. No cumple RTF<1.
+7. **Conclusión T-035c:** ninguna opción de GPU (WebGPU oficial 4,80; q4 WebGPU+KV GPU 3,02; WebNN 3,43) alcanza RTF<1;
+   la mejor sigue siendo WASM+worker (1,18, mejor repetición 0,82). Las medidas se hicieron con la máquina con carga
+   ajena posible (no se pudo garantizar una máquina vacía); la dispersión entre repeticiones fue baja (≤×1,4) en GPU.
+   Crudos: `spikes/t000-moss-browser/out/bench-q4kv-w*.log`, `bench-webnn-*`.
    `auto` sigue sin elegir moss-browser: RNF-PERF-11 no se cumple de forma estable.

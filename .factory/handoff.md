@@ -1,5 +1,4 @@
 # Handoff
 
-- #29 (Release en rojo) arreglado: la publicación a npm ahora es opt-in del dueño. `pnpm release` → `scripts/release.mjs`, que sale en verde sin publicar salvo que la variable del repo `NPM_PUBLISH_ENABLED` sea `true` (release.yml la pasa por env). nightly.yml solo publica si además esa variable es `true`. No se tocaron pasos de CI.
-- Para activar publicación (solo el dueño): configurar Trusted Publishing en npmjs.com (paquete article-voice, repo MoiBaldenegro/article-voice, workflow release.yml/nightly.yml, entorno npm-publish), añadir un changeset que suba a 0.1.0 y crear la variable `NPM_PUBLISH_ENABLED=true`.
-- Siguiente paso: #28 (q4 en WebGPU con KV en GPU y WebNN).
+- #28 (T-035c) hecho: medido q4+WebGPU+KV GPU (RTF 3,02), WebNN oficial (3,43) y q4 en WebNN (no carga). Ninguno cumple RTF<1; cifras en informe T-000 §9 (puntos 5-7). Spike con backend `webnn` en `spikes/t000-moss-browser/src`.
+- Siguiente paso: decidir si se sigue optimizando WASM+worker (mejor 1,18) o se deja moss-browser experimental para 0.1.0.

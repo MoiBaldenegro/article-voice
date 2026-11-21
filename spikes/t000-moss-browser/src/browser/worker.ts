@@ -10,7 +10,7 @@ declare const self: DedicatedWorkerGlobalScope;
 
 interface InitMsg {
   type: 'init';
-  backend: 'webgpu' | 'wasm';
+  backend: 'webgpu' | 'wasm' | 'webnn';
   threads: number;
   modelBase: string; // termina en '/', contiene MOSS-TTS-Nano-100M-ONNX/ y MOSS-Audio-Tokenizer-Nano-ONNX/
   gpuKvCache: boolean;
@@ -103,9 +103,9 @@ async function init(msg: InitMsg): Promise<void> {
     const base = q4 ? q4Base : role.startsWith('codec') ? codec : tts;
     const ts = performance.now();
     // En q4 el muestreador y el códec son grafos _cpu: van siempre al motor CPU (wasm).
-    const ep = q4 && role !== 'prefill' && role !== 'decode' ? 'wasm' : msg.backend;
+    const ep: string = q4 && role !== 'prefill' && role !== 'decode' ? 'wasm' : msg.backend;
     const options: Record<string, unknown> = {
-      executionProviders: [ep],
+      executionProviders: [ep === 'webnn' ? { name: 'webnn', deviceType: 'gpu' } : ep],
       graphOptimizationLevel: 'all',
       externalData: data.map((d) => ({ path: d.split('/').pop()!, data: `${base}${d}` })),
     };

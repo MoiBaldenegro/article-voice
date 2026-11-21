@@ -4,7 +4,7 @@
  */
 
 interface BenchConfig {
-  backend: 'webgpu' | 'wasm';
+  backend: 'webgpu' | 'wasm' | 'webnn';
   threads: number;
   gpuKvCache: boolean;
   segments: string[];

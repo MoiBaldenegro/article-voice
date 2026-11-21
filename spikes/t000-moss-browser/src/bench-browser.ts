@@ -30,7 +30,7 @@ const ARTICLE = [
 
 interface Config {
   name: string;
-  backend: 'webgpu' | 'wasm';
+  backend: 'webgpu' | 'wasm' | 'webnn';
   threads: number;
   isolated: boolean;
   gpuKvCache: boolean;
@@ -57,6 +57,8 @@ const CONFIGS: Config[] = [
   { name: 'webgpu-kvgpu-batch8-worker', backend: 'webgpu', threads: 2, isolated: false, gpuKvCache: true, codecPolicy: 'batch:8:worker' },
   { name: 'webgpu-batch8-worker', backend: 'webgpu', threads: 2, isolated: false, gpuKvCache: false, codecPolicy: 'batch:8:worker' },
   { name: 'q4-webgpu-kvgpu-batch8-worker', backend: 'webgpu', threads: 2, isolated: false, gpuKvCache: true, codecPolicy: 'batch:8:worker', variant: 'q4' },
+  { name: 'q4-webnn-gpu-batch8-worker', backend: 'webnn', threads: 2, isolated: false, gpuKvCache: false, codecPolicy: 'batch:8:worker', variant: 'q4' },
+  { name: 'webnn-gpu-batch8-worker', backend: 'webnn', threads: 2, isolated: false, gpuKvCache: false, codecPolicy: 'batch:8:worker' },
   { name: 'q4-webgpu-batch8-worker', backend: 'webgpu', threads: 2, isolated: false, gpuKvCache: false, codecPolicy: 'batch:8:worker', variant: 'q4' },
 ].filter((c) => !only || only.split(',').includes(c.name)) as Config[];
 
@@ -87,7 +89,7 @@ for (const cfg of CONFIGS) {
   const browser = await chromium.launch({
     executablePath: chromePath || 'C:/Program Files/Google/Chrome/Application/chrome.exe',
     headless: true,
-    args: ['--enable-unsafe-webgpu', '--autoplay-policy=no-user-gesture-required', '--enable-features=Vulkan', '--js-flags=--max-old-space-size=4096'],
+    args: ['--enable-unsafe-webgpu', '--autoplay-policy=no-user-gesture-required', '--enable-features=Vulkan,WebMachineLearningNeuralNetwork', '--js-flags=--max-old-space-size=4096'],
   });
   try {
     const page = await browser.newPage();
