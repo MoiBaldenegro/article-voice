@@ -1,4 +1,5 @@
 # Handoff
 
-- #34 hecho (T-052 resaltado, HU-12): puerto `SegmentHighlighter`, `DomArticleSource.rangeOf(span)` (mapea offsets normalizados a un Range sin mutar el DOM), `HighlightApiHighlighter` (CSS.highlights, nombre `article-voice`, hoja `::highlight` con `--av-highlight`, sin soporte = no-op, seguimiento con scroll tras 5 s sin scroll del usuario, `behavior:'auto'` con prefers-reduced-motion). El elemento tiene propiedad inyectable `highlighter` (compose la cablea) y respeta `no-highlight`. Specs unitarios + 3 pruebas Playwright en test/e2e. `etc/article-voice.api.md` regenerado. `pnpm verify`, `api:check`, `test:e2e`, `size` verdes.
-- Siguiente paso: #35 (velocidad/voz persistentes), #36, #37.
+- #35 hecho (T-053, HU-13): selects de velocidad (0.75–2) y voz en el shadow del elemento, i18n es/en, persistencia en localStorage (`src/ui/preferences.ts`). Specs en `ArticleVoiceElement.preferences.spec.ts`. `pnpm verify`, `test:a11y`, `test:e2e`, `api:check`, `size` verdes (api.md regenerado).
+- Pendiente de #35: ninguna prueba Playwright de recarga real ni axe con el selector de voz visible (solo jsdom).
+- Siguiente paso: #36 (Dependabot/comunidad) y #37 (Media Session + ejemplos).

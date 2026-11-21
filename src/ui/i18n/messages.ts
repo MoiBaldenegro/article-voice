@@ -7,6 +7,8 @@ export interface Messages {
   readonly resume: string;
   readonly pause: string;
   readonly stop: string;
+  readonly speed: string;
+  readonly voice: string;
   readonly progress: (segment: number, segments: number) => string;
   readonly state: Readonly<Record<UiState, string>>;
   /** Aviso cuando suena el motor de respaldo (RN-13). */

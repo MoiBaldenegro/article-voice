@@ -32,6 +32,7 @@ import {
   type ServerProbe,
   type SpeechEngine,
 } from '../../libs/reader/src/core-api.js';
+import { localStoragePreferences, type PreferencesStore } from './preferences.js';
 import { messagesFor, resolveUiLanguage, type Messages } from './i18n/index.js';
 
 const STYLES = `
@@ -44,11 +45,16 @@ button:hover:not(:disabled) { background: var(--av-accent-hover, #0847c4); }
 button:disabled { opacity: 0.6; cursor: not-allowed; }
 button:focus-visible { outline: 2px solid var(--av-accent, #0b5fff); outline-offset: 2px; box-shadow: 0 0 0 4px var(--av-surface, #fff); }
 [hidden] { display: none !important; }
+label { display: inline-flex; align-items: center; gap: 4px; font-size: 0.875rem; }
+select { min-height: 36px; font: inherit; color: inherit; background: var(--av-surface, #fff); border: 1px solid var(--av-border, #d0d0d0); border-radius: var(--av-radius, 8px); }
+select:focus-visible { outline: 2px solid var(--av-accent, #0b5fff); outline-offset: 2px; }
 [part="progress"], [part="meta"] { margin: 0; font-size: 0.875rem; color: var(--av-text-secondary, #595959); }
 [part="error"] { margin: 0; font-size: 0.875rem; color: #b00020; }
 .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 `;
+
+const RATE_OPTIONS = [0.75, 1, 1.25, 1.5, 1.75, 2];
 
 export const FALLBACK_EVENT = 'article-voice:fallback';
 
@@ -122,6 +128,8 @@ export class ArticleVoiceElement extends BaseElement {
   createAudioOutput: (() => AudioOutput) | undefined;
   /** Resalta el segmento en lectura; sin él (o con `no-highlight`) no se resalta nada. */
   highlighter: SegmentHighlighter | undefined;
+  /** D�nde se recuerdan velocidad y voz; por defecto localStorage (tolerante a fallos). */
+  preferences: PreferencesStore = localStoragePreferences;
 
   readonly #registry = new NarrationRegistry();
   #active: ActiveEngine | null = null;
@@ -145,8 +153,14 @@ export class ArticleVoiceElement extends BaseElement {
     progress: HTMLElement;
     live: HTMLElement;
     alert: HTMLElement;
+    speed: HTMLSelectElement;
+    speedLabel: HTMLLabelElement;
+    voiceSelect: HTMLSelectElement;
+    voiceLabel: HTMLLabelElement;
   } | null = null;
   #controls: HTMLElement | null = null;
+  #prefRate: number | undefined;
+  #prefVoice: string | undefined;
   #errorCode: string | undefined;
   #announced: ArticleVoiceState | null = null;
 
@@ -281,6 +295,10 @@ export class ArticleVoiceElement extends BaseElement {
   // ── Ciclo de vida ────────────────────────────────────────────────────────────────────
   connectedCallback(): void {
     if (!this.shadowRoot) this.#buildTemplate();
+    const prefs = this.preferences.load();
+    this.#prefRate = prefs.rate !== undefined ? this.#validRate(prefs.rate) : undefined;
+    this.#prefVoice = prefs.voice;
+    this.#syncSpeed();
     this.#syncUi();
     this.ready = this.#setup();
   }
@@ -294,6 +312,7 @@ export class ArticleVoiceElement extends BaseElement {
   attributeChangedCallback(name: string, oldValue: string | null, value: string | null): void {
     if (oldValue === value || !this.isConnected || !this.shadowRoot) return;
     if (name === 'rate') {
+      this.#prefRate = undefined; // un cambio expl�cito del atributo manda sobre lo recordado
       this.#applyRate();
       return;
     }
@@ -422,10 +441,38 @@ export class ArticleVoiceElement extends BaseElement {
     const alert = document.createElement('p');
     alert.setAttribute('part', 'error');
     alert.hidden = true;
+    const speed = document.createElement('select');
+    speed.setAttribute('part', 'speed');
+    for (const v of RATE_OPTIONS) speed.append(new Option(`${v}�`, String(v)));
+    speed.addEventListener('change', () => this.#chooseRate(Number(speed.value)));
+    const speedLabel = document.createElement('label');
+    speedLabel.setAttribute('part', 'speed-label');
+    const speedText = document.createElement('span');
+    speedLabel.append(speedText, speed);
+    const voiceSelect = document.createElement('select');
+    voiceSelect.setAttribute('part', 'voice');
+    voiceSelect.addEventListener('change', () => this.#chooseVoice(voiceSelect.value));
+    const voiceLabel = document.createElement('label');
+    voiceLabel.setAttribute('part', 'voice-label');
+    voiceLabel.hidden = true;
+    voiceLabel.append(document.createElement('span'), voiceSelect);
     controls.append(play, pause, stop);
-    wrapper.append(controls, progress, meta, alert, live);
+    wrapper.append(controls, speedLabel, voiceLabel, progress, meta, alert, live);
     root.append(style, wrapper);
-    this.#parts = { root: wrapper, meta, play, pause, stop, progress, live, alert };
+    this.#parts = {
+      root: wrapper,
+      meta,
+      play,
+      pause,
+      stop,
+      progress,
+      live,
+      alert,
+      speed,
+      speedLabel,
+      voiceSelect,
+      voiceLabel,
+    };
     this.#controls = controls;
   }
 
@@ -511,9 +558,7 @@ export class ArticleVoiceElement extends BaseElement {
         'El elemento no tiene motor ni salida de audio',
       );
     }
-    const rate =
-      this.#option(() => PlaybackRate.from(this.getAttribute('rate') ?? '1')) ??
-      PlaybackRate.DEFAULT;
+    const rate = this.#effectiveRate();
 
     this.#disposeResources();
     this.#setState('preparing');
@@ -532,8 +577,9 @@ export class ArticleVoiceElement extends BaseElement {
     });
     this.#engine = engine;
     await engine.prepare();
-    const wanted = this.getAttribute('voice');
+    const wanted = this.#prefVoice ?? this.getAttribute('voice');
     const available = engine.voices();
+    this.#syncVoices(available.map((v) => v.value));
     const voice =
       (wanted ? available.find((v) => v.value === wanted) : undefined) ??
       available[0] ??
@@ -632,11 +678,65 @@ export class ArticleVoiceElement extends BaseElement {
 
   #applyRate(): void {
     const n = this.#narration;
-    const rate = this.#option(() => PlaybackRate.from(this.getAttribute('rate') ?? '1'));
-    if (n && rate) {
+    const rate = this.#effectiveRate();
+    this.#syncSpeed();
+    if (n) {
       n.setRate(rate);
       this.#audio?.setRate(rate.value);
     }
+  }
+
+  #validRate(v: number): number | undefined {
+    try {
+      return PlaybackRate.from(v).value;
+    } catch {
+      return undefined; // valor recordado fuera de RN-08: se ignora sin error
+    }
+  }
+
+  /** Lo recordado manda sobre el atributo; un atributo inv�lido emite AV_INVALID_OPTION. */
+  #effectiveRate(): PlaybackRate {
+    if (this.#prefRate !== undefined) return PlaybackRate.from(this.#prefRate);
+    return (
+      this.#option(() => PlaybackRate.from(this.getAttribute('rate') ?? '1')) ??
+      PlaybackRate.DEFAULT
+    );
+  }
+
+  #chooseRate(value: number): void {
+    const rate = this.#validRate(value);
+    if (rate === undefined) return;
+    this.#prefRate = rate;
+    this.preferences.save({ rate });
+    this.#applyRate();
+  }
+
+  #chooseVoice(value: string): void {
+    if (value === '') return;
+    this.#prefVoice = value; // se aplica en la siguiente narraci�n
+    this.preferences.save({ voice: value });
+  }
+
+  #syncSpeed(): void {
+    const speed = this.#parts?.speed;
+    if (!speed) return;
+    const current = this.#prefRate ?? this.#attrRate();
+    speed.value = String(current);
+  }
+
+  #attrRate(): number {
+    const raw = this.getAttribute('rate');
+    return (raw === null ? undefined : this.#validRate(Number(raw))) ?? PlaybackRate.DEFAULT.value;
+  }
+
+  #syncVoices(ids: readonly string[]): void {
+    const p = this.#parts;
+    if (!p) return;
+    const sel = p.voiceSelect;
+    sel.replaceChildren(...ids.map((id) => new Option(id, id)));
+    const chosen = this.#prefVoice ?? this.getAttribute('voice');
+    if (chosen && ids.includes(chosen)) sel.value = chosen;
+    p.voiceLabel.hidden = ids.length < 2;
   }
 
   #disposeResources(): void {
@@ -680,6 +780,9 @@ export class ArticleVoiceElement extends BaseElement {
     p.play.textContent = s === 'paused' ? t.resume : t.play;
     p.pause.textContent = t.pause;
     p.stop.textContent = t.stop;
+    p.speedLabel.firstElementChild!.textContent = t.speed;
+    p.voiceLabel.firstElementChild!.textContent = t.voice;
+    p.speed.disabled = s === 'preparing';
     p.pause.hidden = s !== 'playing';
     p.stop.hidden = s !== 'playing' && s !== 'paused' && s !== 'preparing';
     this.#controls?.setAttribute('aria-label', t.group);

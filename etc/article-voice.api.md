@@ -125,6 +125,8 @@ export class ArticleVoiceElement extends BaseElement {
     // (undocumented)
     pause(): void;
     play(): Promise<void>;
+    // Warning: (ae-forgotten-export) The symbol "PreferencesStore" needs to be exported by the entry point index.d.ts
+    preferences: PreferencesStore;
     // (undocumented)
     previous(): void;
     probe: ServerProbe;

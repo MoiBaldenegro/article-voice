@@ -6,6 +6,8 @@ export const en: Messages = {
   resume: 'Resume',
   pause: 'Pause',
   stop: 'Stop',
+  speed: 'Speed',
+  voice: 'Voice',
   progress: (segment, segments) => `Part ${segment} of ${segments}`,
   state: {
     idle: 'Ready to listen',
