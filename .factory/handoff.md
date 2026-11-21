@@ -1,5 +1,5 @@
 # Handoff
 
-- #26 hecho: la demo de la landing suena con MOSS real. Audio en `docs/04-diseno/ui/landing/audio/` (6 OGG/Opus mono, 288 KB, voz Nathan), generado con `scripts/generate-landing-audio.py` (venv del spike + soundfile). `build-landing.sh` copia `audio/` a `_site/`. `landing.html` reproduce con `Audio`, sincroniza progreso/resaltado/velocidad/salto y cae a `speechSynthesis` (web-speech) con aviso. Prueba: `pnpm test:landing` (verde); `pnpm verify` verde.
-- Siguiente: nada pendiente de este issue. No escuché el audio (sin oído en la sesión): conviene que una persona lo oiga; Nathan locuta español con acento inglés.
-- Pendiente anterior (T-035): KV en GPU, q4+WebGPU, WebNN (issues #27, #28).
+- T-023 hecho (#21): `src/infrastructure/audio/WebAudioOutput.ts` (+ `playbackProcessorSource.ts`, el worklet como texto cargado por Blob URL). Pasa `audioOutputContract`; spec Jest evalúa el processor real con globales simuladas; `pnpm test:audio` (Playwright/Chrome, PCM sintético) verde: 3 segmentos sin underruns y un hueco de 600 ms cuenta 1 underrun. `pnpm verify` verde.
+- No se exportó en la API pública ni se cableó en `compose.ts` (sigue sin AudioOutput real en el elemento).
+- Siguiente: cablear `WebAudioOutput` en `compose.ts`/elemento (T-041) y exponer el contador de underruns si hace falta.

@@ -11,3 +11,4 @@ temp/
 test-results/
 test/package/.vite-out/
 _site/
+test/audio/.vite-out/

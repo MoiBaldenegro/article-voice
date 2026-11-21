@@ -11,3 +11,4 @@ test/package/.vite-out
 test-results
 temp
 etc
+test/audio/.vite-out/
