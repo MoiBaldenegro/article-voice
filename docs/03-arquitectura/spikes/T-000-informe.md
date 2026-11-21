@@ -144,11 +144,18 @@ Modelo fijo: MOSS-TTS-Nano (decisión del producto). Mismo artículo de 6 frases
 | base (códec en el mismo hilo) | 956 | 1,84 / 1,81 / 2,37 | 1,84 | 74,7 | 25,2 |
 | batch4-worker (códec en worker aparte, lotes de 4) | 1427 | 1,18 / 1,53 / 0,82 | 1,18 | 80,2 | 5,9 |
 | batch8 (lotes de 8, mismo hilo) | 983 | 1,54 / 1,00 / 2,20 | 1,54 | 75,3 | 21,6 |
+| **WebGPU + KV en GPU + códec en worker, lotes de 8** (`webgpu-kvgpu-batch8-worker`, T-035b) | 2027 | 4,70 / 4,80 / 4,87 | **4,80** | 381,9 | 164,7 |
 
 Conclusiones:
 1. Sacar el códec a un worker y decodificarlo por lotes es la mejora más clara: RTF mediano 1,84 → 1,18 y los
    vacíos de audio bajan de ≈25 s a ≈6 s. En la mejor repetición (0,82) ya hay tiempo real, pero la mediana no lo es.
 2. Lotes de 8 sin worker no mejoran de forma fiable (1,00 a 2,20).
 3. El código del intento está en el spike (`src/moss-runtime.ts`, `src/browser/worker.ts`, `page.ts`, `bench-browser.ts`).
-4. Pasos 2 (KV en GPU sin `Invalid Buffer`), 3 (q4 con KV en GPU) y 4 (WebNN) **no se midieron**: ver issues propuestos.
+4. **KV en GPU (T-035b, 2026-11-21).** `webgpu-kvgpu-batch8-worker`, 3 repeticiones, GPU NVIDIA (Lovelace), Chrome:
+   **0 errores `Invalid Buffer`** en las 3 repeticiones, en la corrida con códec adaptativo (`webgpu-kvgpu`, RTF 8,07)
+   y en la paridad de frames (55/55 iguales a Python). La causa del fallo anterior era no liberar los tensores
+   `gpu-buffer` del KV de cada paso (`disposeAll` en `moss-runtime.ts`). RTF mediana **4,80** (4,70–4,87, muy estable),
+   ≈382 ms/frame, memoria Chrome ≈770 MB. Es peor que WASM con worker (1,18): con KV en GPU el cuello de botella es el
+   `local_fixed`/sincronización por frame, no la copia del KV. No cumple RNF-PERF-11; `auto` sigue sin elegir moss-browser.
+5. Pasos 3 (q4 con KV en GPU) y 4 (WebNN) **no se midieron**: ver #28.
    `auto` sigue sin elegir moss-browser: RNF-PERF-11 no se cumple de forma estable.

@@ -1,5 +1,4 @@
 # Handoff
 
-- T-005 hecho (#24): Changesets (`.changeset/config.json`, scripts `changeset` y `release`, `@changesets/cli`), `.github/workflows/release.yml` (PR Version Packages + publicación OIDC con provenance + prueba de humo) y `nightly.yml` (verify + snapshot a `next` si hay changesets). actionlint 1.7.7 sin errores (binario en `temp/`, ignorado). Paquete ya no es `private`; añadidos `repository` y `publishConfig`.
-- Documentado en `docs/07-operacion/ci-cd.md` cómo publicar `0.0.1-next.0`. `pnpm verify` y `package:lint` OK.
-- Siguiente paso (persona): configurar Trusted Publisher en npm, entorno `npm-publish` y permitir PRs de Actions; luego seguir la guía. Falta aún el job de CI "Changeset" (etapa 11).
+- T-035b (#27) hecho: se midió `webgpu-kvgpu-batch8-worker` con `bench-browser.ts` (3 repeticiones, mediana). Sin `Invalid Buffer`, paridad 55/55, RTF mediana 4,80, TTFA 2027 ms. Cifras añadidas a `docs/03-arquitectura/spikes/T-000-informe.md` §9 (conclusión 4). Sin cambios de código (el spike ya liberaba el KV).
+- Siguiente paso: #28 (q4 en WebGPU con KV en GPU y WebNN).
