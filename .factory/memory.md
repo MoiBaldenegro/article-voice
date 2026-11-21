@@ -42,3 +42,4 @@ Agrega entradas cortas y fechadas; no borres las de otros salvo que ya no sean c
 - 2026-11-21: #37 hecho. Media Session dentro del elemento (inyectable `mediaSession`); ejemplos astro/react sin instalar ni probar de verdad, ignorados en eslint (examples/react, examples/astro) y astro en .prettierignore.
 - 2026-11-21: #45 revisión: MVP 0.1.0 completo y verde → productionReady=true. Riesgo conocido: moss-server nunca probado con pesos reales.
 - 2026-11-21: #41 hecho. Ejemplos astro/react usaban article-voice ^0.1.0 (no publicado → install fallaba): ahora `link:../..` (requiere `pnpm build`). El texto de los ejemplos tenía <120 palabras y daba error: ampliado. `pnpm test:examples` (puertos 5183/4331) los instala, arranca y comprueba ready.
+- 2026-11-21: #46 el checklist de la fábrica exige docs/vision.md (existe como resumen; el completo está en docs/01-producto/vision.md).
