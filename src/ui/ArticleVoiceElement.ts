@@ -31,6 +31,23 @@ import {
   type ServerProbe,
   type SpeechEngine,
 } from '../../libs/reader/src/core-api.js';
+import { messagesFor, resolveUiLanguage, type Messages } from './i18n/index.js';
+
+const STYLES = `
+:host { display: inline-block; font-family: var(--av-font, system-ui, sans-serif); color: var(--av-text, #1a1a1a); }
+:host([hidden]) { display: none; }
+[part="root"] { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: 44px; padding: 4px 8px; background: var(--av-surface, #fff); border: 1px solid var(--av-border, #d0d0d0); border-radius: var(--av-radius, 8px); }
+[part="controls"] { display: flex; gap: 8px; }
+button { min-height: 36px; padding: 0 14px; font: inherit; color: #fff; background: var(--av-accent, #0b5fff); border: 0; border-radius: var(--av-radius, 8px); cursor: pointer; }
+button:hover:not(:disabled) { background: var(--av-accent-hover, #0847c4); }
+button:disabled { opacity: 0.6; cursor: not-allowed; }
+button:focus-visible { outline: 2px solid var(--av-accent, #0b5fff); outline-offset: 2px; box-shadow: 0 0 0 4px var(--av-surface, #fff); }
+[hidden] { display: none !important; }
+[part="progress"], [part="meta"] { margin: 0; font-size: 0.875rem; color: var(--av-text-secondary, #595959); }
+[part="error"] { margin: 0; font-size: 0.875rem; color: #b00020; }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+`;
 
 export const FALLBACK_EVENT = 'article-voice:fallback';
 
@@ -105,7 +122,6 @@ export class ArticleVoiceElement extends BaseElement {
 
   readonly #registry = new NarrationRegistry();
   #active: ActiveEngine | null = null;
-  #engineLabel: string | undefined;
   #article: Article | null = null;
   #durationMs = 0;
   #narration: Narration | null = null;
@@ -123,7 +139,12 @@ export class ArticleVoiceElement extends BaseElement {
     pause: HTMLButtonElement;
     stop: HTMLButtonElement;
     progress: HTMLElement;
+    live: HTMLElement;
+    alert: HTMLElement;
   } | null = null;
+  #controls: HTMLElement | null = null;
+  #errorCode: string | undefined;
+  #announced: ArticleVoiceState | null = null;
 
   /** Resuelve cuando termina la selección de motor y la detección en curso (útil en pruebas). */
   ready: Promise<void> = Promise.resolve();
@@ -287,7 +308,9 @@ export class ArticleVoiceElement extends BaseElement {
     try {
       await this.#startNarration();
     } catch (error) {
-      this.#emit('article-voice:error', toErrorDetail(error));
+      const detail = toErrorDetail(error);
+      this.#errorCode = detail.code;
+      this.#emit('article-voice:error', detail);
       this.#setState('error');
       throw error;
     }
@@ -355,34 +378,44 @@ export class ArticleVoiceElement extends BaseElement {
 
   #buildTemplate(): void {
     const root = this.attachShadow({ mode: 'open' });
+    const style = document.createElement('style');
+    style.textContent = STYLES;
     const wrapper = document.createElement('div');
     wrapper.setAttribute('part', 'root');
     const controls = document.createElement('div');
     controls.setAttribute('part', 'controls');
-    const button = (part: string, label: string, onClick: () => void): HTMLButtonElement => {
+    controls.setAttribute('role', 'group');
+    const button = (part: string, onClick: () => void): HTMLButtonElement => {
       const b = document.createElement('button');
       b.type = 'button';
       b.setAttribute('part', part);
-      b.setAttribute('aria-label', label);
-      b.textContent = label;
       b.addEventListener('click', onClick);
       return b;
     };
-    const play = button('play', 'Escuchar', () => {
+    const play = button('play', () => {
       void this.play().catch(() => undefined);
     });
-    const pause = button('pause', 'Pausar', () => this.pause());
-    const stop = button('stop', 'Detener', () => this.stop());
+    const pause = button('pause', () => this.pause());
+    const stop = button('stop', () => this.stop());
     const progress = document.createElement('div');
     progress.setAttribute('part', 'progress');
     const meta = document.createElement('p');
     meta.setAttribute('part', 'meta');
-    meta.setAttribute('role', 'status');
     meta.hidden = true;
+    // Región en vivo siempre presente: anuncia cada cambio de estado una sola vez.
+    const live = document.createElement('div');
+    live.setAttribute('role', 'status');
+    live.setAttribute('aria-live', 'polite');
+    live.setAttribute('aria-atomic', 'true');
+    live.className = 'sr-only';
+    const alert = document.createElement('p');
+    alert.setAttribute('part', 'error');
+    alert.hidden = true;
     controls.append(play, pause, stop);
-    wrapper.append(controls, progress, meta);
-    root.append(wrapper);
-    this.#parts = { root: wrapper, meta, play, pause, stop, progress };
+    wrapper.append(controls, progress, meta, alert, live);
+    root.append(style, wrapper);
+    this.#parts = { root: wrapper, meta, play, pause, stop, progress, live, alert };
+    this.#controls = controls;
   }
 
   async #setup(): Promise<void> {
@@ -394,7 +427,6 @@ export class ArticleVoiceElement extends BaseElement {
 
   async #selectEngine(run: number): Promise<void> {
     this.#active = null;
-    this.#engineLabel = undefined;
     this.#syncUi();
     try {
       const engine = this.#option(() => EngineKind.from(this.getAttribute('engine') ?? 'auto'));
@@ -414,7 +446,6 @@ export class ArticleVoiceElement extends BaseElement {
       });
       if (run !== this.#run) return; // llegó una selección más nueva
       this.#active = { kind: out.kind, fallback: out.fallback };
-      this.#engineLabel = out.label;
       this.#syncUi();
       for (const detail of events) this.#emit(FALLBACK_EVENT, detail);
     } catch (error) {
@@ -550,6 +581,7 @@ export class ArticleVoiceElement extends BaseElement {
       this.#emit('article-voice:segment', { index: n.cursor, segments: n.segments.length });
     }
     if (n.state === 'error') {
+      this.#errorCode = n.errorCode;
       this.#emit('article-voice:error', {
         code: n.errorCode ?? 'AV_UNKNOWN',
         message: 'La narración falló',
@@ -596,22 +628,47 @@ export class ArticleVoiceElement extends BaseElement {
     }
   }
 
+  #messages(): Messages {
+    return messagesFor(
+      resolveUiLanguage(
+        this.#article?.language.value,
+        this.getAttribute('lang'),
+        typeof document === 'undefined' ? undefined : document.documentElement.lang,
+      ),
+    );
+  }
+
   #syncUi(): void {
     const p = this.#parts;
     if (!p) return;
-    p.meta.textContent = this.#engineLabel ?? '';
-    p.meta.hidden = this.#engineLabel === undefined;
+    const t = this.#messages();
     const s = this.#state;
+    const fallback = this.#active?.fallback === true;
+    p.meta.textContent = fallback ? t.fallback : '';
+    p.meta.hidden = !fallback;
     const canPlay = this.#article !== null && this.#active !== null;
     p.play.hidden = s === 'playing' || s === 'preparing';
     p.play.disabled = !canPlay;
-    p.play.textContent = s === 'paused' ? 'Reanudar' : 'Escuchar';
-    p.play.setAttribute('aria-label', p.play.textContent);
+    p.play.textContent = s === 'paused' ? t.resume : t.play;
+    p.pause.textContent = t.pause;
+    p.stop.textContent = t.stop;
     p.pause.hidden = s !== 'playing';
     p.stop.hidden = s !== 'playing' && s !== 'paused' && s !== 'preparing';
+    this.#controls?.setAttribute('aria-label', t.group);
+    p.root.setAttribute('aria-busy', String(s === 'preparing'));
     const { segment, segments } = this.progress;
     p.progress.textContent = segments > 0 ? `${segment + 1}/${segments}` : '';
+    if (segments > 0) p.progress.setAttribute('title', t.progress(segment + 1, segments));
+    else p.progress.removeAttribute('title');
+    p.alert.textContent = s === 'error' ? (t.errors[this.#errorCode ?? ''] ?? t.genericError) : '';
+    p.alert.hidden = s !== 'error';
     p.root.dataset['state'] = s;
+    // Anuncio único por estado: solo playing, paused y error (HU-09 CA-2).
+    if (s !== this.#announced) {
+      this.#announced = s;
+      p.live.textContent =
+        s === 'error' ? p.alert.textContent : s === 'playing' || s === 'paused' ? t.state[s] : '';
+    }
   }
 
   #emit(type: string, detail: unknown): void {

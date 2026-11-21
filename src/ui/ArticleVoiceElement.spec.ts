@@ -33,7 +33,7 @@ describe('<article-voice> arranque con SelectEngine', () => {
     expect(el.activeEngine).toEqual({ kind: 'web-speech', fallback: true });
     const meta = el.shadowRoot?.querySelector('[part="meta"]') as HTMLElement;
     expect(meta.hidden).toBe(false);
-    expect(meta.textContent).toBe('voz del sistema');
+    expect(meta.textContent).toBe('Se usa la voz del sistema');
     expect(events).toHaveLength(1);
     expect(events[0]?.detail).toMatchObject({
       reason: 'server-unreachable',

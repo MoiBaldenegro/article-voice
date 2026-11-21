@@ -22,6 +22,8 @@ export default tseslint.config(
       'test/package/serve.mjs',
       'test/audio/.vite-out/**',
       'test/audio/serve.mjs',
+      'test/a11y/.vite-out/**',
+      'test/a11y/serve.mjs',
       'temp/**',
     ],
   },

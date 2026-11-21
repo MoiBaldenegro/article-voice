@@ -1,6 +1,8 @@
 # Handoff
 
-- T-041 hecho (#22): `src/ui/ArticleVoiceElement.ts` completo: plantilla (botones play/pausa/detener en shadow, partes root/controls/play/pause/stop/progress/meta), atributos→propiedades, métodos play/pause/stop/next/previous/refresh, props de solo lectura (state, progress, article, activeEngine, voices) y eventos ready/statechange/segment/ended/fallback/error. Usa PlayNarration/Pause/Resume/Stop/Seek de T-022; `NarrationSession.onChange` nuevo.
-- `src/compose.ts` cablea DomArticleSource, MossServerEngine/WebSpeechEngine y WebAudioOutput; `libs/reader/src/index.ts` ahora exporta `ArticleVoiceElement`, `defineArticleVoice` y registra `<article-voice>` al importar. El contenido anterior del index está en `core-api.ts` (ui/infra importan de ahí para evitar ciclos).
-- `pnpm verify`, `api:extract` (etc/ actualizado), `api:check`, `test:package` (comprueba el registro), `package:lint` y `size` OK.
-- Pendiente (#23 T-042): estados visuales, i18n, accesibilidad, estilos/variables CSS. Sin cablear aún: moss-browser, resaltado (`no-highlight` solo se refleja), `confirm-download`/`download-*`, selector `target`, lista `voice`/`rate` en la UI, estado `buffering`.
+- T-042 hecho (#23): estados visuales, i18n es/en y accesibilidad de `<article-voice>`.
+  - `src/ui/i18n/{es,en,messages,index}.ts`: diccionarios; idioma = idioma del artículo > atributo `lang` > `<html lang>` > es (es→es, otro→en).
+  - Elemento: estilos en shadow (variables `--av-*`, foco 2px con `:focus-visible`, `prefers-reduced-motion`), `role=group` con aria-label, región `role=status aria-live=polite` que anuncia playing/paused/error una vez, `aria-busy` en preparing, mensaje de error visible (`part=error`, texto por código AV_*), aviso de respaldo en `part=meta` ("Se usa la voz del sistema" / "Using the system voice").
+  - Pruebas: `ArticleVoiceElement.a11y.spec.ts` (jest) y `pnpm test:a11y` (Playwright + @axe-core/playwright, puerto 4175, en CI).
+- `pnpm verify`, `api:check`, `size`, `test:a11y` OK.
+- Pendiente: sin cablear moss-browser, resaltado, `confirm-download`/`download-*`, selector `target`, selector de voz/velocidad en la UI, estado `buffering`; los errores no-DomainError del motor salen como AV_UNKNOWN (texto genérico).

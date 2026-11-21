@@ -28,7 +28,9 @@ describe('composición de <article-voice>', () => {
 
     expect(el.activeEngine).toEqual({ kind: 'web-speech', fallback: true });
     expect(seen[0]?.detail.reason).toBe('server-unreachable');
-    expect(el.shadowRoot?.querySelector('[part="meta"]')?.textContent).toBe('voz del sistema');
+    expect(el.shadowRoot?.querySelector('[part="meta"]')?.textContent).toBe(
+      'Se usa la voz del sistema',
+    );
     el.remove();
   });
 });
