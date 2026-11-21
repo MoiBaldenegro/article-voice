@@ -27,6 +27,7 @@
     "test:landing": "playwright test -c test/landing/playwright.config.ts",
     "test:a11y": "playwright test -c test/a11y/playwright.config.ts",
     "test:audio": "playwright test -c test/audio/playwright.config.ts",
+    "test:examples": "pnpm build && pnpm --dir examples/react install --ignore-workspace && pnpm --dir examples/astro install --ignore-workspace && playwright test -c test/examples/playwright.config.ts",
     "test:e2e": "pnpm build && playwright test -c test/e2e/playwright.config.ts",
     "test:package": "pnpm build && playwright test -c test/package/playwright.config.ts",
     "package:lint": "pnpm build && publint && attw --pack . --profile esm-only",

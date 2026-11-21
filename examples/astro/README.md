@@ -1,6 +1,7 @@
 # Ejemplo: Astro
 
 ```sh
+pnpm build           # en la raíz, una vez
 cd examples/astro
 pnpm install --ignore-workspace
 pnpm dev          # http://localhost:4321

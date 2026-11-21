@@ -7,7 +7,7 @@
     "build": "vite build"
   },
   "dependencies": {
-    "article-voice": "^0.1.0",
+    "article-voice": "link:../..",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

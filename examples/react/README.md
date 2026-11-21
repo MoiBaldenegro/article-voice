@@ -1,6 +1,7 @@
 # Ejemplo: React (Vite)
 
 ```sh
+pnpm build           # en la raíz, una vez
 cd examples/react
 pnpm install --ignore-workspace
 pnpm dev          # http://localhost:5173

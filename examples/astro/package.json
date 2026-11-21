@@ -3,5 +3,5 @@
   "private": true,
   "type": "module",
   "scripts": { "dev": "astro dev", "build": "astro build" },
-  "dependencies": { "article-voice": "^0.1.0", "astro": "^5.0.0" }
+  "dependencies": { "article-voice": "link:../..", "astro": "^5.0.0" }
 }
