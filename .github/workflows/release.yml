@@ -45,6 +45,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: 'true'
+          NPM_PUBLISH_ENABLED: ${{ vars.NPM_PUBLISH_ENABLED }}
       - id: version
         if: steps.changesets.outputs.published == 'true'
         run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
