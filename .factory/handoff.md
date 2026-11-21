@@ -1,5 +1,5 @@
 # Handoff
 
-- Planificador (issue #17 / T-035): es un spike de medición ya abierto para constructor; no se ejecutó. docs/backlog.md actualizado con lo hecho (T-050, T-051, cableado #19 que el commit llama «T-052»).
-- Propuestos: T-022, T-023, T-041, T-042, T-005.
-- Siguiente paso: ejecutar #17 (T-035) y T-022/T-023, luego T-041.
+- T-022 hecho (issue #20), `pnpm verify` verde (299 tests). En `libs/reader/src/core/application/`: `NarrationSession` (une Narration + SpeechEngine + AudioOutput, síntesis con lookahead 2), `NarrationRegistry` (una sola activa), `narration.use-cases.ts` (PlayNarration, Pause/Resume/Stop/SeekNarration) y su spec con dobles.
+- No se exportó nada en el entry público (sin cambio de API).
+- Siguiente paso: T-023 (WebAudioOutput) y T-041 (ArticleVoiceElement) que debe cablear estos casos de uso en `src/compose.ts`; T-035 sigue pendiente.
