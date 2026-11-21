@@ -3,7 +3,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { ArticleDetector, MinWords } from '../../../libs/reader/src/index.js';
+import { ArticleDetector, MinWords } from '../../../libs/reader/src/core-api.js';
 import { DomArticleSource } from './DomArticleSource.js';
 
 function load(html: string): Document {

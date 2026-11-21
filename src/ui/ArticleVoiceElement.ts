@@ -1,19 +1,36 @@
-// ArticleVoiceElement (parcial, T-052): solo el arranque con selección de motor.
-// Al conectarse elige el motor con SelectEngine (CU-06), expone `activeEngine`, muestra la
-// etiqueta "voz del sistema" cuando suena el respaldo (RN-13) y re-emite el FallbackEvent como
-// `article-voice:fallback`. La plantilla completa, los atributos restantes y la reproducción
-// llegan con T-041/T-042.
+// <article-voice>: plantilla (play/pausa/detener), atributos → configuración, métodos, eventos y
+// propiedades de solo lectura (docs/…/contrato-api-publica). `ui` no importa infraestructura: los
+// adaptadores (fuente del DOM, motores, salida de audio) los inyecta `src/compose.ts` o las pruebas.
 
 import {
+  Article,
+  DetectArticle,
   DomainError,
+  ResourceNotFoundError,
   EngineKind,
   HttpsUrl,
+  Language,
+  MinWords,
+  Narration,
+  NarrationRegistry,
+  PauseNarration,
+  PlaybackRate,
+  PlayNarration,
+  ResumeNarration,
   SelectEngine,
+  SeekNarration,
+  Segmenter,
+  StopNarration,
+  VoiceId,
+  type ArticleSource,
+  type AudioOutput,
   type DeviceCapabilities,
   type FallbackEvent,
+  type NarrationSession,
   type SelectEngineOutput,
   type ServerProbe,
-} from '../../libs/reader/src/index.js';
+  type SpeechEngine,
+} from '../../libs/reader/src/core-api.js';
 
 export const FALLBACK_EVENT = 'article-voice:fallback';
 
@@ -22,8 +39,55 @@ export interface ActiveEngine {
   readonly fallback: boolean;
 }
 
-export class ArticleVoiceElement extends HTMLElement {
-  static readonly observedAttributes = ['engine', 'fallback', 'server-url'];
+export type ArticleVoiceState = 'idle' | 'preparing' | 'playing' | 'paused' | 'ended' | 'error';
+
+export interface ArticleVoiceArticleInfo {
+  readonly title?: string;
+  readonly language: string;
+  readonly words: number;
+  readonly durationMs: number;
+}
+
+export interface ArticleVoiceProgress {
+  readonly segment: number;
+  readonly segments: number;
+  readonly remainingMs: number;
+}
+
+/** Lo que recibe la fábrica de motores: el motor elegido y las opciones de los atributos. */
+export interface EngineRequest {
+  readonly kind: ActiveEngine['kind'];
+  readonly serverUrl?: string;
+  readonly modelUrl?: string;
+  readonly ortWasmUrl?: string;
+  readonly workerUrl?: string;
+  readonly language: string;
+  readonly rate: number;
+}
+
+const EMPTY_SOURCE: ArticleSource = { candidates: () => [], extract: () => undefined };
+
+// Importar el paquete en SSR/Node no debe fallar: sin DOM la clase queda inerte.
+const BaseElement = (
+  typeof HTMLElement === 'undefined' ? class {} : HTMLElement
+) as typeof HTMLElement;
+
+export class ArticleVoiceElement extends BaseElement {
+  static readonly observedAttributes = [
+    'for',
+    'lang',
+    'engine',
+    'fallback',
+    'server-url',
+    'model-url',
+    'ort-wasm-url',
+    'worker-url',
+    'voice',
+    'rate',
+    'min-words',
+    'no-highlight',
+    'confirm-download',
+  ];
 
   /** Inyectados por la composición (`src/compose.ts`) o por las pruebas. */
   probe: ServerProbe = async () => false;
@@ -35,48 +99,309 @@ export class ArticleVoiceElement extends HTMLElement {
       speechSynthesis: false,
     }),
   };
+  articleSource: ArticleSource = EMPTY_SOURCE;
+  createEngine: ((request: EngineRequest) => SpeechEngine) | undefined;
+  createAudioOutput: (() => AudioOutput) | undefined;
 
+  readonly #registry = new NarrationRegistry();
   #active: ActiveEngine | null = null;
-  #meta: HTMLElement | undefined;
+  #engineLabel: string | undefined;
+  #article: Article | null = null;
+  #durationMs = 0;
+  #narration: Narration | null = null;
+  #session: NarrationSession | null = null;
+  #engine: SpeechEngine | null = null;
+  #audio: AudioOutput | null = null;
+  #state: ArticleVoiceState = 'idle';
+  #lastCursor = -1;
+  #userStopped = false;
   #run = 0;
+  #parts: {
+    root: HTMLElement;
+    meta: HTMLElement;
+    play: HTMLButtonElement;
+    pause: HTMLButtonElement;
+    stop: HTMLButtonElement;
+    progress: HTMLElement;
+  } | null = null;
 
+  /** Resuelve cuando termina la selección de motor y la detección en curso (útil en pruebas). */
+  ready: Promise<void> = Promise.resolve();
+
+  // ── Propiedades de solo lectura ──────────────────────────────────────────────────────
   get activeEngine(): ActiveEngine | null {
     return this.#active;
   }
-
-  /** Resuelve cuando termina la selección de motor en curso (útil en pruebas). */
-  ready: Promise<void> = Promise.resolve();
-
-  connectedCallback(): void {
-    if (!this.shadowRoot) {
-      const root = this.attachShadow({ mode: 'open' });
-      const meta = document.createElement('p');
-      meta.setAttribute('part', 'meta');
-      meta.setAttribute('role', 'status');
-      meta.hidden = true;
-      root.append(meta);
-      this.#meta = meta;
-    }
-    this.ready = this.#selectEngine();
+  get state(): ArticleVoiceState {
+    return this.#state;
   }
-
-  attributeChangedCallback(): void {
-    if (this.isConnected && this.shadowRoot) this.ready = this.#selectEngine();
+  get article(): ArticleVoiceArticleInfo | null {
+    const a = this.#article;
+    if (!a) return null;
+    return {
+      ...(a.title !== undefined ? { title: a.title } : {}),
+      language: a.language.value,
+      words: a.wordCount,
+      durationMs: this.#durationMs,
+    };
   }
-
-  async #selectEngine(): Promise<void> {
-    const run = ++this.#run;
-    this.#active = null;
-    this.#render(undefined);
+  get progress(): ArticleVoiceProgress {
+    const n = this.#narration;
+    const segments = n?.segments.length ?? 0;
+    const segment = n ? n.cursor : 0;
+    const total = this.#durationMs;
+    const remainingMs =
+      segments === 0 ? total : Math.round((total * (segments - segment)) / segments);
+    return { segment, segments, remainingMs };
+  }
+  get voices(): ReadonlyArray<{ id: string; name: string; languages: string[] }> {
+    if (!this.#engine || !this.#article) return [];
     try {
-      const engine = this.#option('engine', () =>
-        EngineKind.from(this.getAttribute('engine') ?? 'auto'),
-      );
-      const fallbackAttr = this.getAttribute('fallback');
-      const fallback = fallbackAttr === 'none' ? 'none' : 'web-speech';
+      return this.#engine.voices().map((v) => ({
+        id: v.value,
+        name: v.value,
+        languages: [this.#article?.language.value ?? ''],
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  // ── Propiedades equivalentes a los atributos ─────────────────────────────────────────
+  get htmlFor(): string | null {
+    return this.getAttribute('for');
+  }
+  set htmlFor(v: string | null) {
+    this.#reflect('for', v);
+  }
+  get engine(): string {
+    return this.getAttribute('engine') ?? 'auto';
+  }
+  set engine(v: string) {
+    this.#reflect('engine', v);
+  }
+  get fallback(): string {
+    return this.getAttribute('fallback') ?? 'web-speech';
+  }
+  set fallback(v: string) {
+    this.#reflect('fallback', v);
+  }
+  get serverUrl(): string | null {
+    return this.getAttribute('server-url');
+  }
+  set serverUrl(v: string | null) {
+    this.#reflect('server-url', v);
+  }
+  get modelUrl(): string | null {
+    return this.getAttribute('model-url');
+  }
+  set modelUrl(v: string | null) {
+    this.#reflect('model-url', v);
+  }
+  get ortWasmUrl(): string | null {
+    return this.getAttribute('ort-wasm-url');
+  }
+  set ortWasmUrl(v: string | null) {
+    this.#reflect('ort-wasm-url', v);
+  }
+  get workerUrl(): string | null {
+    return this.getAttribute('worker-url');
+  }
+  set workerUrl(v: string | null) {
+    this.#reflect('worker-url', v);
+  }
+  get voice(): string | null {
+    return this.getAttribute('voice');
+  }
+  set voice(v: string | null) {
+    this.#reflect('voice', v);
+  }
+  get rate(): number {
+    const raw = this.getAttribute('rate');
+    if (raw === null) return PlaybackRate.DEFAULT.value;
+    try {
+      return PlaybackRate.from(raw).value;
+    } catch {
+      return PlaybackRate.DEFAULT.value;
+    }
+  }
+  set rate(v: number) {
+    this.setAttribute('rate', String(v));
+  }
+  get minWords(): number {
+    const raw = this.getAttribute('min-words');
+    if (raw === null) return 120;
+    try {
+      return MinWords.from(raw).value;
+    } catch {
+      return 120;
+    }
+  }
+  set minWords(v: number) {
+    this.setAttribute('min-words', String(v));
+  }
+  get noHighlight(): boolean {
+    return this.hasAttribute('no-highlight');
+  }
+  set noHighlight(v: boolean) {
+    this.toggleAttribute('no-highlight', Boolean(v));
+  }
+  get confirmDownload(): string {
+    return this.getAttribute('confirm-download') ?? 'always';
+  }
+  set confirmDownload(v: string) {
+    this.#reflect('confirm-download', v);
+  }
+
+  // ── Ciclo de vida ────────────────────────────────────────────────────────────────────
+  connectedCallback(): void {
+    if (!this.shadowRoot) this.#buildTemplate();
+    this.#syncUi();
+    this.ready = this.#setup();
+  }
+
+  disconnectedCallback(): void {
+    if (this.#registry.active?.isFinished === false) this.#safe(() => this.stop());
+  }
+
+  attributeChangedCallback(name: string, oldValue: string | null, value: string | null): void {
+    if (oldValue === value || !this.isConnected || !this.shadowRoot) return;
+    if (name === 'rate') {
+      this.#applyRate();
+      return;
+    }
+    if (name === 'voice' || name === 'no-highlight' || name === 'confirm-download') return;
+    this.ready = this.#setup();
+  }
+
+  // ── Métodos ──────────────────────────────────────────────────────────────────────────
+  /** Resuelve al empezar a sonar. Rechaza con el error del dominio (también emitido). */
+  async play(): Promise<void> {
+    await this.ready;
+    const session = this.#session;
+    if (session && !session.isFinished) {
+      if (this.#state === 'paused')
+        this.#safeThrow(() => new ResumeNarration(this.#registry).execute());
+      return;
+    }
+    try {
+      await this.#startNarration();
+    } catch (error) {
+      this.#emit('article-voice:error', toErrorDetail(error));
+      this.#setState('error');
+      throw error;
+    }
+  }
+
+  pause(): void {
+    if (this.#state === 'playing') this.#safe(() => new PauseNarration(this.#registry).execute());
+  }
+
+  stop(): void {
+    if (this.#state === 'playing' || this.#state === 'paused' || this.#state === 'preparing') {
+      this.#userStopped = true;
+      this.#safe(() => new StopNarration(this.#registry).execute());
+    }
+  }
+
+  next(): void {
+    const n = this.#narration;
+    if (n && this.#isActive()) this.#seek(n.cursor + 1);
+  }
+
+  previous(): void {
+    const n = this.#narration;
+    if (n && this.#isActive()) this.#seek(n.cursor - 1);
+  }
+
+  /** Vuelve a detectar el artículo (contenido cargado después). */
+  async refresh(): Promise<void> {
+    this.ready = this.#detect();
+    await this.ready;
+  }
+
+  // ── Interno ──────────────────────────────────────────────────────────────────────────
+  #reflect(name: string, value: string | null): void {
+    if (value === null) this.removeAttribute(name);
+    else this.setAttribute(name, value);
+  }
+
+  #isActive(): boolean {
+    return this.#state === 'playing' || this.#state === 'paused';
+  }
+
+  #seek(index: number): void {
+    const n = this.#narration;
+    if (!n || index < 0 || index >= n.segments.length) return;
+    this.#safe(() => new SeekNarration(this.#registry).execute(index));
+  }
+
+  #safe(fn: () => void): void {
+    try {
+      fn();
+    } catch (error) {
+      this.#emit('article-voice:error', toErrorDetail(error));
+    }
+  }
+
+  #safeThrow(fn: () => void): void {
+    try {
+      fn();
+    } catch (error) {
+      this.#emit('article-voice:error', toErrorDetail(error));
+      throw error;
+    }
+  }
+
+  #buildTemplate(): void {
+    const root = this.attachShadow({ mode: 'open' });
+    const wrapper = document.createElement('div');
+    wrapper.setAttribute('part', 'root');
+    const controls = document.createElement('div');
+    controls.setAttribute('part', 'controls');
+    const button = (part: string, label: string, onClick: () => void): HTMLButtonElement => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.setAttribute('part', part);
+      b.setAttribute('aria-label', label);
+      b.textContent = label;
+      b.addEventListener('click', onClick);
+      return b;
+    };
+    const play = button('play', 'Escuchar', () => {
+      void this.play().catch(() => undefined);
+    });
+    const pause = button('pause', 'Pausar', () => this.pause());
+    const stop = button('stop', 'Detener', () => this.stop());
+    const progress = document.createElement('div');
+    progress.setAttribute('part', 'progress');
+    const meta = document.createElement('p');
+    meta.setAttribute('part', 'meta');
+    meta.setAttribute('role', 'status');
+    meta.hidden = true;
+    controls.append(play, pause, stop);
+    wrapper.append(controls, progress, meta);
+    root.append(wrapper);
+    this.#parts = { root: wrapper, meta, play, pause, stop, progress };
+  }
+
+  async #setup(): Promise<void> {
+    const run = ++this.#run;
+    await this.#selectEngine(run);
+    if (run !== this.#run) return;
+    if (this.articleSource !== EMPTY_SOURCE) await this.#detect();
+  }
+
+  async #selectEngine(run: number): Promise<void> {
+    this.#active = null;
+    this.#engineLabel = undefined;
+    this.#syncUi();
+    try {
+      const engine = this.#option(() => EngineKind.from(this.getAttribute('engine') ?? 'auto'));
+      const fallback = this.getAttribute('fallback') === 'none' ? 'none' : 'web-speech';
       const rawUrl = this.getAttribute('server-url');
       const serverUrl = rawUrl
-        ? this.#option('server-url', () => HttpsUrl.of(rawUrl, 'server-url').value)
+        ? this.#option(() => HttpsUrl.of(rawUrl, 'server-url').value)
         : undefined;
 
       const events: FallbackEvent[] = [];
@@ -89,7 +414,8 @@ export class ArticleVoiceElement extends HTMLElement {
       });
       if (run !== this.#run) return; // llegó una selección más nueva
       this.#active = { kind: out.kind, fallback: out.fallback };
-      this.#render(out.label);
+      this.#engineLabel = out.label;
+      this.#syncUi();
       for (const detail of events) this.#emit(FALLBACK_EVENT, detail);
     } catch (error) {
       if (run !== this.#run) return;
@@ -97,21 +423,195 @@ export class ArticleVoiceElement extends HTMLElement {
     }
   }
 
+  async #detect(): Promise<void> {
+    try {
+      const minWords = this.#option(() => MinWords.from(this.getAttribute('min-words') ?? '120'));
+      const rate = this.#option(() => PlaybackRate.from(this.getAttribute('rate') ?? '1'));
+      const explicitId = this.getAttribute('for') ?? undefined;
+      const lang = this.getAttribute('lang') || undefined;
+      const out = new DetectArticle(this.articleSource).execute({
+        ...(explicitId ? { explicitId } : {}),
+        ...(minWords ? { minWords } : {}),
+        ...(rate ? { rate } : {}),
+        ...(lang ? { language: lang } : {}),
+      });
+      this.#article = out.article;
+      this.#durationMs = out.estimatedDurationMs;
+      this.#syncUi();
+      if (out.warnings.length > 0) {
+        this.#emit('article-voice:error', {
+          code: 'AV_INPUT_TOO_LARGE',
+          message: 'El artículo supera el límite y se recortó',
+        });
+      }
+      this.#emit('article-voice:ready', { article: this.article });
+    } catch (error) {
+      this.#article = null;
+      this.#syncUi();
+      this.#emit('article-voice:error', toErrorDetail(error));
+    }
+  }
+
+  async #startNarration(): Promise<void> {
+    if (!this.#article) await this.#detect();
+    const article = this.#article;
+    if (!article) {
+      throw new ResourceNotFoundError('AV_ARTICLE_NOT_FOUND', 'No hay artículo que leer', {
+        recoverable: true,
+      });
+    }
+    const active = this.#active;
+    if (!active)
+      throw new ResourceNotFoundError('AV_ENGINE_UNAVAILABLE', 'Ningún motor disponible');
+    if (!this.createEngine || !this.createAudioOutput) {
+      throw new ResourceNotFoundError(
+        'AV_ENGINE_UNAVAILABLE',
+        'El elemento no tiene motor ni salida de audio',
+      );
+    }
+    const rate =
+      this.#option(() => PlaybackRate.from(this.getAttribute('rate') ?? '1')) ??
+      PlaybackRate.DEFAULT;
+
+    this.#disposeResources();
+    this.#setState('preparing');
+    const serverUrl = this.getAttribute('server-url');
+    const modelUrl = this.getAttribute('model-url');
+    const ortWasmUrl = this.getAttribute('ort-wasm-url');
+    const workerUrl = this.getAttribute('worker-url');
+    const engine = this.createEngine({
+      kind: active.kind,
+      ...(serverUrl ? { serverUrl } : {}),
+      ...(modelUrl ? { modelUrl } : {}),
+      ...(ortWasmUrl ? { ortWasmUrl } : {}),
+      ...(workerUrl ? { workerUrl } : {}),
+      language: article.language.value,
+      rate: rate.value,
+    });
+    this.#engine = engine;
+    await engine.prepare();
+    const wanted = this.getAttribute('voice');
+    const available = engine.voices();
+    const voice =
+      (wanted ? available.find((v) => v.value === wanted) : undefined) ??
+      available[0] ??
+      VoiceId.of('default');
+
+    const segments = new Segmenter().segment(
+      article.blocks,
+      Language.of(article.language.value).value,
+    );
+    const narration = new Narration({
+      id: `av-${Date.now()}`,
+      segments,
+      voice,
+      rate,
+      engine: EngineKind.of(active.kind),
+      isFallback: active.fallback,
+    });
+    this.#narration = narration;
+    this.#lastCursor = -1;
+    this.#userStopped = false;
+    const audio = this.createAudioOutput();
+    this.#audio = audio;
+    const play = new PlayNarration(this.#registry, engine, audio);
+    const session = await this.#play(play, narration);
+    this.#session = session;
+  }
+
+  async #play(play: PlayNarration, narration: Narration): Promise<NarrationSession> {
+    // La sesión se crea dentro de execute(); nos suscribimos en cuanto queda registrada.
+    const pending = play.execute(narration);
+    const session = this.#registry.active;
+    if (session) {
+      this.#session = session;
+      session.onChange(() => this.#onSessionChange());
+      this.#onSessionChange();
+    }
+    return pending;
+  }
+
+  #onSessionChange(): void {
+    const n = this.#narration;
+    if (!n) return;
+    let state: ArticleVoiceState;
+    switch (n.state) {
+      case 'idle':
+        state = 'idle';
+        break;
+      case 'stopped':
+        state = this.#userStopped ? 'idle' : 'ended';
+        break;
+      default:
+        state = n.state;
+    }
+    if (n.cursor !== this.#lastCursor && (state === 'playing' || state === 'paused')) {
+      this.#lastCursor = n.cursor;
+      this.#emit('article-voice:segment', { index: n.cursor, segments: n.segments.length });
+    }
+    if (n.state === 'error') {
+      this.#emit('article-voice:error', {
+        code: n.errorCode ?? 'AV_UNKNOWN',
+        message: 'La narración falló',
+      });
+    }
+    this.#setState(state);
+    if (state === 'ended') this.#emit('article-voice:ended', {});
+  }
+
+  #setState(state: ArticleVoiceState): void {
+    const previous = this.#state;
+    if (state === previous) {
+      this.#syncUi();
+      return;
+    }
+    this.#state = state;
+    this.#syncUi();
+    this.#emit('article-voice:statechange', { state, previous });
+  }
+
+  #applyRate(): void {
+    const n = this.#narration;
+    const rate = this.#option(() => PlaybackRate.from(this.getAttribute('rate') ?? '1'));
+    if (n && rate) {
+      n.setRate(rate);
+      this.#audio?.setRate(rate.value);
+    }
+  }
+
+  #disposeResources(): void {
+    this.#engine?.dispose();
+    this.#audio?.close();
+    this.#engine = null;
+    this.#audio = null;
+  }
+
   /** Un atributo inválido emite AV_INVALID_OPTION y se usa el valor por defecto. */
-  #option<T>(name: string, parse: () => T): T | undefined {
+  #option<T>(parse: () => T): T | undefined {
     try {
       return parse();
     } catch (error) {
       this.#emit('article-voice:error', toErrorDetail(error));
-      void name;
       return undefined;
     }
   }
 
-  #render(label: string | undefined): void {
-    if (!this.#meta) return;
-    this.#meta.textContent = label ?? '';
-    this.#meta.hidden = label === undefined;
+  #syncUi(): void {
+    const p = this.#parts;
+    if (!p) return;
+    p.meta.textContent = this.#engineLabel ?? '';
+    p.meta.hidden = this.#engineLabel === undefined;
+    const s = this.#state;
+    const canPlay = this.#article !== null && this.#active !== null;
+    p.play.hidden = s === 'playing' || s === 'preparing';
+    p.play.disabled = !canPlay;
+    p.play.textContent = s === 'paused' ? 'Reanudar' : 'Escuchar';
+    p.play.setAttribute('aria-label', p.play.textContent);
+    p.pause.hidden = s !== 'playing';
+    p.stop.hidden = s !== 'playing' && s !== 'paused' && s !== 'preparing';
+    const { segment, segments } = this.progress;
+    p.progress.textContent = segments > 0 ? `${segment + 1}/${segments}` : '';
+    p.root.dataset['state'] = s;
   }
 
   #emit(type: string, detail: unknown): void {

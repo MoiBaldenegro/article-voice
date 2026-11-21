@@ -2,7 +2,7 @@
 // HEAD) con timeout, sin credenciales ni cookies y sin enviar texto del artículo (RNF-PRIV-01).
 // Cualquier respuesta HTTP < 500 significa "el servidor está vivo"; red caída, timeout o 5xx → false.
 
-import type { ServerProbe } from '../../../libs/reader/src/index.js';
+import type { ServerProbe } from '../../../libs/reader/src/core-api.js';
 
 export interface HttpServerProbeOptions {
   /** Por defecto `globalThis.fetch`. */

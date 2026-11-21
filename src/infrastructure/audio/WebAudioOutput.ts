@@ -1,5 +1,5 @@
-import type { AudioOutput, Unsubscribe } from '../../../libs/reader/src/index.js';
-import type { AudioChunk } from '../../../libs/reader/src/index.js';
+import type { AudioOutput, Unsubscribe } from '../../../libs/reader/src/core-api.js';
+import type { AudioChunk } from '../../../libs/reader/src/core-api.js';
 import { PLAYBACK_PROCESSOR_NAME, PLAYBACK_PROCESSOR_SOURCE } from './playbackProcessorSource.js';
 
 export interface WebAudioOutputOptions {

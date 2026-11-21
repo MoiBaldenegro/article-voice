@@ -1,6 +1,6 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { VoiceId, type AudioChunk } from '../../../libs/reader/src/index.js';
+import { VoiceId, type AudioChunk } from '../../../libs/reader/src/core-api.js';
 import { speechEngineContract } from '../../../libs/reader/src/core/domain/outbound/testing/contracts.js';
 import { MossServerEngine } from './MossServerEngine.js';
 

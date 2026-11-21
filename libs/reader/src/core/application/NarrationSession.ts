@@ -18,6 +18,7 @@ export class NarrationSession {
   private unsubscribe: Unsubscribe | undefined;
   private onFinished: (() => void) | undefined;
   private finished = false;
+  private changeListener: (() => void) | undefined;
 
   constructor(
     readonly narration: Narration,
@@ -31,6 +32,15 @@ export class NarrationSession {
     this.onFinished = fn;
   }
 
+  /** Avisa tras cada cambio de estado o de cursor (para que la UI se actualice). */
+  onChange(listener: () => void): void {
+    this.changeListener = listener;
+  }
+
+  private changed(): void {
+    this.changeListener?.();
+  }
+
   get isFinished(): boolean {
     return this.finished;
   }
@@ -39,6 +49,7 @@ export class NarrationSession {
   async start(): Promise<void> {
     const n = this.narration;
     n.play();
+    this.changed();
     this.controller = new AbortController();
     const { signal } = this.controller;
     this.unsubscribe = this.audio.onSegmentEnded((i) => this.handleSegmentEnded(i));
@@ -51,6 +62,7 @@ export class NarrationSession {
     }
     if (signal.aborted || n.state !== 'preparing') return;
     n.prepared();
+    this.changed();
     this.audio.setRate(n.rate.value);
     this.audio.resume();
     void this.pump(n.cursor, signal);
@@ -59,16 +71,19 @@ export class NarrationSession {
   pause(): void {
     this.narration.pause();
     this.audio.pause();
+    this.changed();
   }
 
   resume(): void {
     this.narration.resume();
     this.audio.resume();
+    this.changed();
   }
 
   stop(): void {
     this.narration.stop();
     this.finish();
+    this.changed();
   }
 
   /** Salta al segmento `index`: descarta lo encolado y re-sintetiza desde ahí. */
@@ -79,6 +94,7 @@ export class NarrationSession {
     this.controller = new AbortController();
     this.audio.clear();
     this.wake();
+    this.changed();
     void this.pump(index, this.controller.signal);
   }
 
@@ -99,6 +115,7 @@ export class NarrationSession {
     n.segmentEnded();
     if ((n.state as NarrationState) === 'stopped') this.finish();
     else this.wake();
+    this.changed();
   }
 
   private fail(error: unknown, fallbackCode: string): void {
@@ -107,6 +124,7 @@ export class NarrationSession {
       this.narration.fail(code);
     }
     this.finish();
+    this.changed();
   }
 
   private wake(): void {

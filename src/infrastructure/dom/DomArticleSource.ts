@@ -3,7 +3,7 @@
 // Los BlockRef son opacos: apuntan al nodo mediante un WeakRef propio, así el dominio
 // no retiene nodos del DOM.
 
-import type { ArticleCandidate, BlockRef } from '../../../libs/reader/src/index.js';
+import type { ArticleCandidate, BlockRef } from '../../../libs/reader/src/core-api.js';
 
 export type BlockRole = 'heading' | 'paragraph' | 'list-item' | 'quote';
 

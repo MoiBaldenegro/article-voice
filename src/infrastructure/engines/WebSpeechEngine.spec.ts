@@ -1,4 +1,4 @@
-import { VoiceId, type AudioChunk } from '../../../libs/reader/src/index.js';
+import { VoiceId, type AudioChunk } from '../../../libs/reader/src/core-api.js';
 import { speechEngineContract } from '../../../libs/reader/src/core/domain/outbound/testing/contracts.js';
 import {
   WebSpeechEngine,

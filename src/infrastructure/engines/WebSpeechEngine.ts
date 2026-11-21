@@ -9,7 +9,7 @@ import {
   VoiceId,
   type AudioChunk,
   type SpeechEngine,
-} from '../../../libs/reader/src/index.js';
+} from '../../../libs/reader/src/core-api.js';
 
 export interface SystemVoice {
   readonly name: string;

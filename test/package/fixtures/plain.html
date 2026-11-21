@@ -3,7 +3,11 @@
   <body>
     <script type="module">
       import { createCore, DomainError } from '/dist/index.js';
-      window.__result = { core: typeof createCore(), hasError: typeof DomainError };
+      window.__result = {
+        core: typeof createCore(),
+        hasError: typeof DomainError,
+        registered: typeof customElements.get('article-voice'),
+      };
     </script>
   </body>
 </html>

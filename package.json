@@ -58,7 +58,9 @@
   "files": [
     "dist"
   ],
-  "sideEffects": false,
+  "sideEffects": [
+    "./dist/index.js"
+  ],
   "size-limit": [
     {
       "path": "dist/index.js",

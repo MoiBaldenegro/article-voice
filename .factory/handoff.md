@@ -1,5 +1,6 @@
 # Handoff
 
-- T-023 hecho (#21): `src/infrastructure/audio/WebAudioOutput.ts` (+ `playbackProcessorSource.ts`, el worklet como texto cargado por Blob URL). Pasa `audioOutputContract`; spec Jest evalúa el processor real con globales simuladas; `pnpm test:audio` (Playwright/Chrome, PCM sintético) verde: 3 segmentos sin underruns y un hueco de 600 ms cuenta 1 underrun. `pnpm verify` verde.
-- No se exportó en la API pública ni se cableó en `compose.ts` (sigue sin AudioOutput real en el elemento).
-- Siguiente: cablear `WebAudioOutput` en `compose.ts`/elemento (T-041) y exponer el contador de underruns si hace falta.
+- T-041 hecho (#22): `src/ui/ArticleVoiceElement.ts` completo: plantilla (botones play/pausa/detener en shadow, partes root/controls/play/pause/stop/progress/meta), atributos→propiedades, métodos play/pause/stop/next/previous/refresh, props de solo lectura (state, progress, article, activeEngine, voices) y eventos ready/statechange/segment/ended/fallback/error. Usa PlayNarration/Pause/Resume/Stop/Seek de T-022; `NarrationSession.onChange` nuevo.
+- `src/compose.ts` cablea DomArticleSource, MossServerEngine/WebSpeechEngine y WebAudioOutput; `libs/reader/src/index.ts` ahora exporta `ArticleVoiceElement`, `defineArticleVoice` y registra `<article-voice>` al importar. El contenido anterior del index está en `core-api.ts` (ui/infra importan de ahí para evitar ciclos).
+- `pnpm verify`, `api:extract` (etc/ actualizado), `api:check`, `test:package` (comprueba el registro), `package:lint` y `size` OK.
+- Pendiente (#23 T-042): estados visuales, i18n, accesibilidad, estilos/variables CSS. Sin cablear aún: moss-browser, resaltado (`no-highlight` solo se refleja), `confirm-download`/`download-*`, selector `target`, lista `voice`/`rate` en la UI, estado `buffering`.

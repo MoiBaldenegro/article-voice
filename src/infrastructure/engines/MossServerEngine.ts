@@ -10,7 +10,7 @@ import {
   VoiceId,
   type AudioChunk,
   type SpeechEngine,
-} from '../../../libs/reader/src/index.js';
+} from '../../../libs/reader/src/core-api.js';
 
 export const DEFAULT_MODEL = 'moss-tts-nano';
 export const DEFAULT_SAMPLE_RATE = 48000;

@@ -1,7 +1,7 @@
 import type {
   DeviceCapabilities,
   DeviceCapabilitiesSnapshot,
-} from '../../../libs/reader/src/index.js';
+} from '../../../libs/reader/src/core-api.js';
 
 /** Capacidades reales del navegador. */
 export class BrowserDeviceCapabilities implements DeviceCapabilities {

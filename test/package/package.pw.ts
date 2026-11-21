@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-const expected = { core: 'object', hasError: 'function' };
+const expected = { core: 'object', hasError: 'function', registered: 'function' };
 
 for (const page of ['vite.html', 'plain.html']) {
   test(`dist/ funciona desde ${page}`, async ({ page: p }) => {

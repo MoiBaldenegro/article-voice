@@ -5,15 +5,20 @@
 ```ts
 
 // @public (undocumented)
+export interface ActiveEngine {
+    // (undocumented)
+    readonly fallback: boolean;
+    // (undocumented)
+    readonly kind: SelectEngineOutput['kind'];
+}
+
+// @public (undocumented)
 export class Article {
     // Warning: (ae-forgotten-export) The symbol "ArticleInit" needs to be exported by the entry point index.d.ts
     constructor(init: ArticleInit);
     // (undocumented)
     readonly blocks: readonly ContentBlock[];
-    // Warning: (ae-forgotten-export) The symbol "PlaybackRate" needs to be exported by the entry point index.d.ts
     estimatedDuration(rate: PlaybackRate, wpm?: number): number;
-    // Warning: (ae-forgotten-export) The symbol "Language" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     readonly language: Language;
     // (undocumented)
@@ -51,6 +56,117 @@ export interface ArticleSource {
     candidates(explicitId?: string): ArticleCandidate[];
     extract(candidateId: string): ExtractedArticle | undefined;
 }
+
+// @public (undocumented)
+export interface ArticleVoiceArticleInfo {
+    // (undocumented)
+    readonly durationMs: number;
+    // (undocumented)
+    readonly language: string;
+    // (undocumented)
+    readonly title?: string;
+    // (undocumented)
+    readonly words: number;
+}
+
+// Warning: (ae-forgotten-export) The symbol "BaseElement" needs to be exported by the entry point index.d.ts
+//
+// @public (undocumented)
+export class ArticleVoiceElement extends BaseElement {
+    // (undocumented)
+    get activeEngine(): ActiveEngine | null;
+    // (undocumented)
+    get article(): ArticleVoiceArticleInfo | null;
+    // (undocumented)
+    articleSource: ArticleSource;
+    // (undocumented)
+    attributeChangedCallback(name: string, oldValue: string | null, value: string | null): void;
+    // (undocumented)
+    capabilities: DeviceCapabilities;
+    // (undocumented)
+    get confirmDownload(): string;
+    set confirmDownload(v: string);
+    // (undocumented)
+    connectedCallback(): void;
+    // (undocumented)
+    createAudioOutput: (() => AudioOutput) | undefined;
+    // Warning: (ae-forgotten-export) The symbol "EngineRequest" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    createEngine: ((request: EngineRequest) => SpeechEngine) | undefined;
+    // (undocumented)
+    disconnectedCallback(): void;
+    // (undocumented)
+    get engine(): string;
+    set engine(v: string);
+    // (undocumented)
+    get fallback(): string;
+    set fallback(v: string);
+    // (undocumented)
+    get htmlFor(): string | null;
+    set htmlFor(v: string | null);
+    // (undocumented)
+    get minWords(): number;
+    set minWords(v: number);
+    // (undocumented)
+    get modelUrl(): string | null;
+    set modelUrl(v: string | null);
+    // (undocumented)
+    next(): void;
+    // (undocumented)
+    get noHighlight(): boolean;
+    set noHighlight(v: boolean);
+    // (undocumented)
+    static readonly observedAttributes: string[];
+    // (undocumented)
+    get ortWasmUrl(): string | null;
+    set ortWasmUrl(v: string | null);
+    // (undocumented)
+    pause(): void;
+    play(): Promise<void>;
+    // (undocumented)
+    previous(): void;
+    probe: ServerProbe;
+    // (undocumented)
+    get progress(): ArticleVoiceProgress;
+    // (undocumented)
+    get rate(): number;
+    set rate(v: number);
+    ready: Promise<void>;
+    refresh(): Promise<void>;
+    // (undocumented)
+    get serverUrl(): string | null;
+    set serverUrl(v: string | null);
+    // (undocumented)
+    get state(): ArticleVoiceState;
+    // (undocumented)
+    stop(): void;
+    // (undocumented)
+    get voice(): string | null;
+    set voice(v: string | null);
+    // (undocumented)
+    get voices(): ReadonlyArray<{
+        id: string;
+        name: string;
+        languages: string[];
+    }>;
+    // (undocumented)
+    get workerUrl(): string | null;
+    set workerUrl(v: string | null);
+}
+
+// @public (undocumented)
+export interface ArticleVoiceProgress {
+    // (undocumented)
+    readonly remainingMs: number;
+    // (undocumented)
+    readonly segment: number;
+    // (undocumented)
+    readonly segments: number;
+}
+
+// @public (undocumented)
+export type ArticleVoiceState = 'idle' | 'preparing' | 'playing' | 'paused' | 'ended' | 'error';
 
 // @public
 export interface AudioChunk {
@@ -105,6 +221,9 @@ export const DEFAULT_MIN_WORDS = 120;
 
 // @public
 export const DEFAULT_WPM = 150;
+
+// @public
+export function defineArticleVoice(tagName?: string, registry?: CustomElementRegistry): void;
 
 // @public
 export function densityScore(c: ArticleCandidate): number;
@@ -261,6 +380,22 @@ export class HttpsUrl extends ValueObject<{
 export class InvalidStateTransitionError extends DomainError {
 }
 
+// @public (undocumented)
+export class Language extends ValueObject<{
+    value: LanguageCode;
+}> {
+    static from(raw: string): Language;
+    // (undocumented)
+    static of(value: string): Language;
+    // (undocumented)
+    get value(): LanguageCode;
+}
+
+// Warning: (ae-forgotten-export) The symbol "SUPPORTED_LANGUAGES" needs to be exported by the entry point index.d.ts
+//
+// @public (undocumented)
+export type LanguageCode = (typeof SUPPORTED_LANGUAGES)[number];
+
 // @public
 export const MAX_ARTICLE_CHARS = 200000;
 
@@ -356,10 +491,85 @@ export interface NarrationInit {
 }
 
 // @public (undocumented)
+export class NarrationRegistry {
+    activate(session: NarrationSession): void;
+    // (undocumented)
+    get active(): NarrationSession | undefined;
+    // (undocumented)
+    stopActive(): void;
+}
+
+// @public (undocumented)
+export class NarrationSession {
+    constructor(narration: Narration, engine: SpeechEngine, audio: AudioOutput, lookahead?: number);
+    // (undocumented)
+    get isFinished(): boolean;
+    // (undocumented)
+    readonly narration: Narration;
+    onChange(listener: () => void): void;
+    // (undocumented)
+    pause(): void;
+    // (undocumented)
+    resume(): void;
+    seek(index: number): void;
+    setOnFinished(fn: () => void): void;
+    start(): Promise<void>;
+    // (undocumented)
+    stop(): void;
+}
+
+// @public (undocumented)
 export type NarrationState = (typeof NARRATION_STATES)[number];
 
 // @public (undocumented)
+export class PauseNarration {
+    constructor(registry: NarrationRegistry);
+    // (undocumented)
+    execute(): void;
+}
+
+// @public
+export class PlaybackRate extends ValueObject<{
+    value: number;
+}> {
+    // (undocumented)
+    static readonly DEFAULT: PlaybackRate;
+    static from(raw: string | number): PlaybackRate;
+    // (undocumented)
+    static readonly MAX = 2;
+    // (undocumented)
+    static readonly MIN = 0.75;
+    // (undocumented)
+    static of(value: number): PlaybackRate;
+    // (undocumented)
+    static readonly STEP = 0.25;
+    // (undocumented)
+    get value(): number;
+}
+
+// @public
+export class PlayNarration {
+    constructor(registry: NarrationRegistry, engine: SpeechEngine, audio: AudioOutput);
+    // (undocumented)
+    execute(narration: Narration): Promise<NarrationSession>;
+}
+
+// @public (undocumented)
 export class ResourceNotFoundError extends DomainError {
+}
+
+// @public (undocumented)
+export class ResumeNarration {
+    constructor(registry: NarrationRegistry);
+    // (undocumented)
+    execute(): void;
+}
+
+// @public (undocumented)
+export class SeekNarration {
+    constructor(registry: NarrationRegistry);
+    // (undocumented)
+    execute(segmentIndex: number): void;
 }
 
 // @public
@@ -367,6 +577,24 @@ export interface Segment {
     // (undocumented)
     readonly index: number;
     readonly spans: readonly TextSpan[];
+    readonly text: string;
+}
+
+// @public (undocumented)
+export class Segmenter {
+    // Warning: (ae-forgotten-export) The symbol "TextNormalizer" needs to be exported by the entry point index.d.ts
+    constructor(normalizer?: TextNormalizer);
+    // (undocumented)
+    segment(blocks: readonly SegmenterBlock[], lang: LanguageCode): Segment[];
+}
+
+// @public (undocumented)
+export interface SegmenterBlock {
+    // (undocumented)
+    readonly ref: BlockRef;
+    // (undocumented)
+    readonly role: 'heading' | 'paragraph' | 'list-item' | 'quote';
+    // (undocumented)
     readonly text: string;
 }
 
@@ -406,6 +634,13 @@ export interface SpeechEngine {
     prepare(signal?: AbortSignal): Promise<void>;
     synthesize(text: string, voice: VoiceId, signal?: AbortSignal): AsyncIterable<AudioChunk>;
     voices(): readonly VoiceId[];
+}
+
+// @public (undocumented)
+export class StopNarration {
+    constructor(registry: NarrationRegistry);
+    // (undocumented)
+    execute(): void;
 }
 
 // @public (undocumented)
