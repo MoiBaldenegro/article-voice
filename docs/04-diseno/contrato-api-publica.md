@@ -50,7 +50,7 @@
 | `voice` | `voice` | id de voz | la primera del idioma | Voz |
 | `rate` | `rate` | 0.75–2.0 | 1 o la preferencia guardada | RN-08 |
 | `min-words` | `minWords` | entero | 120 | RN-01 |
-| `no-highlight` | `noHighlight` | booleano | ausente | Desactiva el resaltado |
+| `no-highlight` | `noHighlight` | booleano | ausente | Desactiva el resaltado (CSS Custom Highlight API; sin soporte del navegador no se resalta, y el DOM del artículo nunca se modifica). Con `prefers-reduced-motion` el seguimiento por scroll no se anima |
 | `confirm-download` | `confirmDownload` | `always`\|`never` | `always` | `never` solo si el sitio ya pidió consentimiento por su cuenta |
 
 Un valor inválido emite `AV_INVALID_OPTION` y se usa el valor por defecto: **un atributo mal

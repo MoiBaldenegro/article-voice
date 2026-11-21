@@ -247,3 +247,91 @@ describe('<article-voice> reproducción', () => {
     el.remove();
   });
 });
+
+describe('<article-voice> resaltado', () => {
+  function withHighlighter(attrs: Record<string, string> = {}) {
+    const f = full(attrs);
+    const calls: string[] = [];
+    const spans: unknown[][] = [];
+    f.el.highlighter = {
+      highlight: (s) => {
+        calls.push('highlight');
+        spans.push([...s]);
+      },
+      clear: () => calls.push('clear'),
+    };
+    return { ...f, calls, spans };
+  }
+
+  it('resalta el segmento actual al sonar y lo mueve con cada segmento', async () => {
+    const { el, audio, calls, spans } = withHighlighter();
+    document.body.append(el);
+    await el.ready;
+    await el.play();
+    await flush();
+    expect(calls).toEqual(['highlight']);
+    expect(spans[0]).toEqual([expect.objectContaining({ block: 'b1', start: 0 })]);
+    audio.finish(0);
+    await flush();
+    expect(calls).toEqual(['highlight', 'highlight']);
+    expect(spans[1]).not.toEqual(spans[0]);
+    el.remove();
+  });
+
+  it('mantiene el resaltado en pausa y lo quita al detener o terminar', async () => {
+    const { el, audio, calls } = withHighlighter();
+    document.body.append(el);
+    await el.ready;
+    await el.play();
+    await flush();
+    el.pause();
+    expect(calls).toEqual(['highlight']);
+    await el.play();
+    await flush();
+    el.stop();
+    await flush();
+    expect(calls.at(-1)).toBe('clear');
+
+    calls.length = 0;
+    await el.play();
+    await flush();
+    for (let i = 0; i < el.progress.segments; i++) {
+      audio.finish(i);
+      await flush();
+    }
+    expect(el.state).toBe('ended');
+    expect(calls.at(-1)).toBe('clear');
+    el.remove();
+  });
+
+  it('con no-highlight no resalta; al activarlo en marcha limpia', async () => {
+    const off = withHighlighter({ 'no-highlight': '' });
+    document.body.append(off.el);
+    await off.el.ready;
+    await off.el.play();
+    await flush();
+    expect(off.calls).toEqual([]);
+    off.el.remove();
+
+    const on = withHighlighter();
+    document.body.append(on.el);
+    await on.el.ready;
+    await on.el.play();
+    await flush();
+    on.el.noHighlight = true;
+    expect(on.calls).toEqual(['highlight', 'clear']);
+    on.el.noHighlight = false;
+    expect(on.calls).toEqual(['highlight', 'clear', 'highlight']);
+    on.el.remove();
+  });
+
+  it('sin highlighter inyectado funciona igual', async () => {
+    const { el } = full();
+    document.body.append(el);
+    await el.ready;
+    await el.play();
+    await flush();
+    expect(el.state).toBe('playing');
+    el.remove();
+  });
+});

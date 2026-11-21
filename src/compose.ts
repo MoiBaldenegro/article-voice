@@ -2,6 +2,7 @@
 import { BrowserDeviceCapabilities } from './infrastructure/device/BrowserDeviceCapabilities.js';
 import { WebAudioOutput } from './infrastructure/audio/WebAudioOutput.js';
 import { DomArticleSource } from './infrastructure/dom/DomArticleSource.js';
+import { HighlightApiHighlighter } from './infrastructure/dom/HighlightApiHighlighter.js';
 import { MossServerEngine } from './infrastructure/engines/MossServerEngine.js';
 import { WebSpeechEngine } from './infrastructure/engines/WebSpeechEngine.js';
 import { createHttpServerProbe } from './infrastructure/net/HttpServerProbe.js';
@@ -21,6 +22,7 @@ export class ComposedArticleVoiceElement extends ArticleVoiceElement {
   override probe = createHttpServerProbe();
   override capabilities = new BrowserDeviceCapabilities();
   override articleSource = new DomArticleSource(document);
+  override highlighter = new HighlightApiHighlighter(this.articleSource, document);
   override createEngine = engineFor;
   override createAudioOutput = () => new WebAudioOutput();
 }

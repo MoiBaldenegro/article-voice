@@ -3,7 +3,7 @@
 // Los BlockRef son opacos: apuntan al nodo mediante un WeakRef propio, así el dominio
 // no retiene nodos del DOM.
 
-import type { ArticleCandidate, BlockRef } from '../../../libs/reader/src/core-api.js';
+import type { ArticleCandidate, BlockRef, TextSpan } from '../../../libs/reader/src/core-api.js';
 
 export type BlockRole = 'heading' | 'paragraph' | 'list-item' | 'quote';
 
@@ -191,6 +191,66 @@ export class DomArticleSource {
   resolve(ref: BlockRef): Element | undefined {
     const el = this.refs.get(ref)?.deref();
     return el?.isConnected ? el : undefined;
+  }
+
+  /**
+   * Rango del DOM que corresponde a un `TextSpan` (offsets del texto normalizado del bloque).
+   * No muta el DOM; `undefined` si el bloque ya no está o el rango no cuadra.
+   */
+  rangeOf(span: TextSpan): Range | undefined {
+    const el = this.resolve(span.block);
+    if (!el) return undefined;
+    const pieces: { node: Text | null; start: number; end: number }[] = [];
+    let raw = '';
+    const visit = (node: Node): void => {
+      if (node.nodeType === 3) {
+        const t = node.textContent ?? '';
+        pieces.push({ node: node as Text, start: raw.length, end: raw.length + t.length });
+        raw += t;
+        return;
+      }
+      if (node.nodeType !== 1) return;
+      const child = node as Element;
+      if (this.isExcluded(child)) return;
+      const tag = child.tagName.toLowerCase();
+      if (BLOCK_TAGS.has(tag)) return;
+      if (tag === 'br') {
+        pieces.push({ node: null, start: raw.length, end: raw.length + 1 });
+        raw += ' ';
+        return;
+      }
+      for (const c of Array.from(child.childNodes)) visit(c);
+    };
+    for (const c of Array.from(el.childNodes)) visit(c);
+
+    // Normalización idéntica a `walk`: espacios colapsados y recortados.
+    const normToRaw: number[] = [];
+    let inSpace = true;
+    for (let i = 0; i < raw.length; i++) {
+      if (/\s/.test(raw.charAt(i))) {
+        if (!inSpace) normToRaw.push(i);
+        inSpace = true;
+      } else {
+        normToRaw.push(i);
+        inSpace = false;
+      }
+    }
+    while (normToRaw.length > 0 && /\s/.test(raw.charAt(normToRaw[normToRaw.length - 1] ?? 0))) {
+      normToRaw.pop();
+    }
+    const first = normToRaw[span.start];
+    const last = normToRaw[span.end - 1];
+    if (first === undefined || last === undefined) return undefined;
+
+    const startIdx = pieces.findIndex((p) => p.node && first >= p.start && first < p.end);
+    const endIdx = pieces.findIndex((p) => p.node && last >= p.start && last < p.end);
+    const a = pieces[startIdx];
+    const b = pieces[endIdx];
+    if (!a?.node || !b?.node) return undefined;
+    const range = this.doc.createRange();
+    range.setStart(a.node, first - a.start);
+    range.setEnd(b.node, last + 1 - b.start);
+    return range;
   }
 
   private refFor(el: Element): BlockRef {

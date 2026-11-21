@@ -15,6 +15,7 @@ export type {
   DeviceCapabilities,
   DeviceCapabilitiesSnapshot,
   ModelStore,
+  SegmentHighlighter,
   SpeechEngine,
   Unsubscribe,
 } from './core/domain/outbound/index.js';

@@ -27,6 +27,7 @@ import {
   type DeviceCapabilities,
   type FallbackEvent,
   type NarrationSession,
+  type SegmentHighlighter,
   type SelectEngineOutput,
   type ServerProbe,
   type SpeechEngine,
@@ -119,6 +120,8 @@ export class ArticleVoiceElement extends BaseElement {
   articleSource: ArticleSource = EMPTY_SOURCE;
   createEngine: ((request: EngineRequest) => SpeechEngine) | undefined;
   createAudioOutput: (() => AudioOutput) | undefined;
+  /** Resalta el segmento en lectura; sin él (o con `no-highlight`) no se resalta nada. */
+  highlighter: SegmentHighlighter | undefined;
 
   readonly #registry = new NarrationRegistry();
   #active: ActiveEngine | null = null;
@@ -130,6 +133,7 @@ export class ArticleVoiceElement extends BaseElement {
   #audio: AudioOutput | null = null;
   #state: ArticleVoiceState = 'idle';
   #lastCursor = -1;
+  #highlighted = -1;
   #userStopped = false;
   #run = 0;
   #parts: {
@@ -283,6 +287,8 @@ export class ArticleVoiceElement extends BaseElement {
 
   disconnectedCallback(): void {
     if (this.#registry.active?.isFinished === false) this.#safe(() => this.stop());
+    this.#highlighted = -1;
+    this.highlighter?.clear();
   }
 
   attributeChangedCallback(name: string, oldValue: string | null, value: string | null): void {
@@ -291,7 +297,12 @@ export class ArticleVoiceElement extends BaseElement {
       this.#applyRate();
       return;
     }
-    if (name === 'voice' || name === 'no-highlight' || name === 'confirm-download') return;
+    if (name === 'no-highlight') {
+      if (this.noHighlight) this.#syncHighlight('idle');
+      else this.#syncHighlight(this.#state);
+      return;
+    }
+    if (name === 'voice' || name === 'confirm-download') return;
     this.ready = this.#setup();
   }
 
@@ -587,8 +598,25 @@ export class ArticleVoiceElement extends BaseElement {
         message: 'La narración falló',
       });
     }
+    this.#syncHighlight(state);
     this.#setState(state);
     if (state === 'ended') this.#emit('article-voice:ended', {});
+  }
+
+  #syncHighlight(state: ArticleVoiceState): void {
+    const n = this.#narration;
+    const h = this.highlighter;
+    if (!h) return;
+    const spans = n?.segments[n.cursor]?.spans;
+    if (spans && (state === 'playing' || state === 'paused') && !this.noHighlight) {
+      if (this.#highlighted !== n?.cursor) {
+        this.#highlighted = n?.cursor ?? -1;
+        h.highlight(spans);
+      }
+    } else if (this.#highlighted !== -1) {
+      this.#highlighted = -1;
+      h.clear();
+    }
   }
 
   #setState(state: ArticleVoiceState): void {

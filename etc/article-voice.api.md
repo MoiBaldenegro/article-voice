@@ -102,6 +102,7 @@ export class ArticleVoiceElement extends BaseElement {
     // (undocumented)
     get fallback(): string;
     set fallback(v: string);
+    highlighter: SegmentHighlighter | undefined;
     // (undocumented)
     get htmlFor(): string | null;
     set htmlFor(v: string | null);
@@ -596,6 +597,12 @@ export interface SegmenterBlock {
     readonly role: 'heading' | 'paragraph' | 'list-item' | 'quote';
     // (undocumented)
     readonly text: string;
+}
+
+// @public
+export interface SegmentHighlighter {
+    clear(): void;
+    highlight(spans: readonly TextSpan[]): void;
 }
 
 // @public (undocumented)

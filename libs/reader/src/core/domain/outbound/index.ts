@@ -8,3 +8,4 @@ export type {
   ContentBlock,
   ExtractedArticle,
 } from './ArticleSource.port.js';
+export type { SegmentHighlighter } from './SegmentHighlighter.port.js';
