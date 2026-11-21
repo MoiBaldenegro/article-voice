@@ -11,7 +11,7 @@ landing con audio (#26), T-035 parcial/b/c (medido; ninguna vía cumple RTF<1).
 2. Prueba extremo a extremo del elemento con un servidor `/v1/audio/speech` falso (Playwright).
 3. Resaltado de la frase con Highlight API (T-052 resaltado, HU-12).
 4. Velocidad y voz con preferencias (T-053, HU-13).
-5. Comunidad restante de T-006: Dependabot y revisión del checklist.
+5. ✅ T-006: Dependabot y checklist hechos (#36). Pendiente humano: protección de `main`.
 6. Servidor de referencia documentado para `moss-server` (cómo levantar un `/v1/audio/speech`).
 7. Media Session (T-057) y ejemplos por framework (T-056).
 

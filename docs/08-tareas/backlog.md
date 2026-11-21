@@ -23,6 +23,14 @@ Cada tarea sigue la [plantilla](plantilla-de-ticket.md). Las que tienen detalle 
 | T-005 | `ci.yml`, `release.yml`, `nightly.yml` con Changesets y Trusted Publishing | `0.0.1-next.0` publicada con provenance |
 | T-006 | Comunidad: `NOTICE`, plantillas, protección de `main`, Dependabot | Revisado con el checklist |
 
+Checklist de T-006 (revisado en #36):
+
+- [x] `LICENSE`, `NOTICE` (atribución a MOSS-TTS-Nano, Apache-2.0), `CODE_OF_CONDUCT.md`
+- [x] `CONTRIBUTING.md` (comandos corregidos: `pnpm verify`, `pnpm api:extract`) y `SECURITY.md`
+- [x] Plantillas de issue y de PR en `.github/`
+- [x] `.github/dependabot.yml`: npm y github-actions, semanal, agrupado
+- [ ] **Pendiente humano:** protección de `main` (PR obligatorio, checks de CI requeridos, sin force-push). Solo el dueño del repo puede configurarla en Settings → Branches.
+
 ## Épica 1 · Detectar y preparar el texto (0.1.0)
 
 | ID | Tarea | Historias |

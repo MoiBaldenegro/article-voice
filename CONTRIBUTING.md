@@ -17,7 +17,7 @@ Ver [onboarding](docs/07-operacion/onboarding.md). En resumen:
 ```bash
 corepack enable
 pnpm install
-pnpm verify      # lint + tipos + pruebas + build + contrato
+pnpm verify      # tipos + lint + formato + pruebas
 ```
 
 ## Hacer el cambio
@@ -27,7 +27,7 @@ pnpm verify      # lint + tipos + pruebas + build + contrato
   [guía de estilo](docs/05-estandares/guia-de-estilo.md).
 - Pruebas para cada criterio de aceptación ([estrategia de pruebas](docs/06-calidad/estrategia-de-pruebas.md)).
 - Si cambia algo publicado: `pnpm changeset`.
-- Si cambia el contrato público a propósito: `pnpm api:update` y explica el cambio en el PR.
+- Si cambia el contrato público a propósito: `pnpm api:extract` y explica el cambio en el PR.
 
 ## Abrir el PR
 
