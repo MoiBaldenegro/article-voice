@@ -60,7 +60,7 @@ Elige una de las dos vías (el servidor de referencia soporta ambas; ver su
   una vez por frase: para uso real, mantén el modelo cargado en un proceso propio y usa `upstream`.
 
 Si el modelo produce otra frecuencia (p. ej. WAV), remuestrea a 48 kHz y quita la cabecera antes de
-responder. Los pesos oficiales no se incluyen en este repositorio.
+responder. Los pesos oficiales no se incluyen en este repositorio; la sección 7 documenta una conexión real verificada.
 
 ## 4. CORS
 
@@ -94,3 +94,29 @@ Si tu sitio tiene CSP, añade el origen del servidor a `connect-src`
 | Siempre suena la voz del sistema | El sondeo `HEAD /` falla o `server-url` no es https |
 | Audio acelerado o ruidoso | El servidor no entrega 16-bit mono a 48 kHz |
 | `403` | Origen no permitido |
+
+## 7. Verificación con los pesos reales (2026-11-21)
+
+`pnpm test:moss-real` ejecuta la prueba de punta a punta (`scripts/moss-e2e/`): usa los pesos
+públicos del spike T-000 (`spikes/t000-moss-browser/models`, ignorados por git; si faltan, los
+descarga con `download-models.mjs` y el commit fijado en su `manifest.json`), arranca
+`moss_upstream.py` (MOSS-TTS-Nano 100M ONNX en CPU, 4 hilos, modelo cargado una vez, voz `Nathan`,
+salida PCM mono 48 kHz) detrás del servidor de referencia (`BACKEND=upstream`), pide un párrafo en
+español y otro en inglés y abre `examples/html` en Chromium con Playwright.
+Requiere `pnpm build`, el venv del spike (`onnxruntime`, `sentencepiece`, `numpy`) y
+`playwright install chromium`. El informe queda en `temp/moss-e2e-report.json`.
+
+Resultado (CPU de escritorio de 20 hilos lógicos, Windows 10, onnxruntime 1.32, sin GPU):
+
+| Idioma | Audio | Tiempo de síntesis | RTF (síntesis / audio) | Formato |
+| --- | --- | --- | --- | --- |
+| es (2 frases, 137 caracteres) | 12,80 s | 6,08 s | 0,48 | `audio/pcm`, 16-bit mono 48 kHz, pico 10305 |
+| en (2 frases, 142 caracteres) | 9,12 s | 4,06 s | 0,45 | `audio/pcm`, 16-bit mono 48 kHz, pico 7368 |
+
+Una sola medición por idioma (incluye la ida y vuelta HTTP, no el arranque del modelo): orientativa.
+En el navegador, `<article-voice engine="moss-server">` pasó a `playing`, avanzó de la frase 0 a la 1,
+resaltó con la CSS Custom Highlight API y no emitió `article-voice:fallback` ni `error`.
+
+Notas: la voz `default` se asigna a `Nathan`; la síntesis es secuencial (un candado, un solo modelo),
+así que varias peticiones simultáneas se encolan. Un RTF < 1 en CPU significa que el audio se genera
+más rápido de lo que dura, por lo que la narración no se corta con el `lookahead` actual.

@@ -14,6 +14,7 @@ export default tseslint.config(
       'node_modules/**',
       'dist/**',
       'spikes/**',
+      'scripts/moss-e2e/**',
       'docs/**',
       'coverage/**',
       '**/*.cjs',
