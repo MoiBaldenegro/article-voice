@@ -10,3 +10,4 @@ etc/*.tmp
 temp/
 test-results/
 test/package/.vite-out/
+_site/

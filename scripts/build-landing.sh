@@ -12,5 +12,8 @@ mkdir -p "$out"
   sed '1,/<\/style>/d' "$src"
   printf '</body>\n</html>\n'
 } > "$out/index.html"
+# Audio de la demo (MOSS-TTS-Nano, ver docs/04-diseno/ui/landing/README.md)
+rm -rf "$out/audio"
+cp -R "$(dirname "$src")/audio" "$out/audio"
 touch "$out/.nojekyll"
 echo "landing en $out/index.html"

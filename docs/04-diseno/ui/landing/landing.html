@@ -124,6 +124,8 @@ nav.links a:hover { color: var(--color-text); }
 .btn.sm { min-height: 36px; padding: 0 12px; font-size: 13px; }
 @media (max-width: 480px) { .av { grid-template-columns: auto minmax(0, 1fr); } .av-side { grid-column: 1 / -1; justify-content: flex-start; } }
 .demo-note { font-size: 12px; color: var(--color-text-muted); padding: 0 28px 21px; }
+.demo-notice { padding: 0; margin: 0; color: var(--color-text-secondary); }
+.av-progress { cursor: pointer; }
 .states { display: flex; flex-wrap: wrap; gap: 7px; padding: 0 28px 24px; }
 .states button { background: none; border: 1px solid var(--color-border); color: var(--color-text-muted); font: 500 11px/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; padding: 8px 9px; cursor: pointer; border-radius: 0; min-height: 32px; }
 .states button[aria-pressed="true"] { color: var(--color-text); border-color: var(--color-accent); }
@@ -241,11 +243,11 @@ footer .row { display: flex; flex-wrap: wrap; gap: 21px; justify-content: space-
             </button>
             <div class="av-main">
               <div class="av-line"><strong id="av-title">Escuchar</strong><span class="av-meta" id="av-meta">2 min · español</span></div>
-              <div class="av-progress" aria-hidden="true"><b id="av-bar"></b></div>
+              <div class="av-progress" id="av-progress" aria-hidden="true"><b id="av-bar"></b></div>
             </div>
             <div class="av-side">
               <span class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
-              <span class="chip" id="av-engine">moss · webgpu</span>
+              <span class="chip" id="av-engine">moss</span>
               <button class="rate" id="av-rate" type="button" aria-label="Velocidad de lectura">1×</button>
             </div>
             <div class="av-confirm" id="av-confirm" hidden>
@@ -253,6 +255,7 @@ footer .row { display: flex; flex-wrap: wrap; gap: 21px; justify-content: space-
               <span class="row"><button class="btn sm" id="av-cancel" type="button">Ahora no</button><button class="btn sm btn--accent" id="av-ok" type="button"><span class="dot" aria-hidden="true"></span>Descargar · 168 MB</button></span>
             </div>
           </div>
+          <p class="demo-note demo-notice" id="av-notice" role="status" hidden></p>
           <p class="sr-status" id="av-live" aria-live="polite" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)"></p>
 
           <div class="art-text" id="art-text">
@@ -269,7 +272,7 @@ footer .row { display: flex; flex-wrap: wrap; gap: 21px; justify-content: space-
           <button type="button" data-state="fallback" aria-pressed="false">Voz del sistema</button>
           <button type="button" data-state="error" aria-pressed="false">Error</button>
         </div>
-        <p class="demo-note">Maqueta: los estados son reales del contrato, el audio se simula. La insignia «moss · webgpu» ilustra el motor experimental; el motor recomendado hoy es moss-server.</p>
+        <p class="demo-note">Audio generado con MOSS-TTS-Nano. En tu sitio, el componente lo genera con tu servidor o en el navegador (experimental).</p>
       </div>
     </div>
   </div>
@@ -410,57 +413,181 @@ footer .row { display: flex; flex-wrap: wrap; gap: 21px; justify-content: space-
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const $ = (id) => document.getElementById(id);
   const av = $('av'), play = $('av-play'), icon = $('av-icon'), title = $('av-title'), meta = $('av-meta'),
-        bar = $('av-bar'), engine = $('av-engine'), rateBtn = $('av-rate'), confirmBox = $('av-confirm'), live = $('av-live');
+        bar = $('av-bar'), engine = $('av-engine'), rateBtn = $('av-rate'), confirmBox = $('av-confirm'), live = $('av-live'),
+        notice = $('av-notice'), progress = $('av-progress');
   const sentences = [...document.querySelectorAll('#art-text .s')];
   const PLAY = 'M3 1.5v13l11-6.5z', PAUSE = 'M3 1.5h3.5v13H3zM9.5 1.5H13v13H9.5z', RETRY = 'M8 2a6 6 0 1 0 5.7 4.1l-1.8.6A4.1 4.1 0 1 1 8 3.9V6l3.5-3L8 0z';
   let state = 'idle', timer = null, cursor = 0, rate = 1, downloaded = false, pct = 0;
   const rates = [1, 1.25, 1.5, 2, 0.75];
 
+  // Audio real: un archivo OGG/Opus por frase, generado con MOSS-TTS-Nano (ver audio/ y README de la landing).
+  const files = sentences.map((_, i) => `audio/s${String(i + 1).padStart(2, '0')}.ogg`);
+  const durations = sentences.map(() => 0);
+  const audio = new Audio();
+  audio.preload = 'auto';
+  let mode = 'moss';           // 'moss' = audio pregenerado · 'system' = speechSynthesis (web-speech)
+  let loaded = false;          // ¿hay una frase cargada en `audio`?
+  let token = 0;               // invalida callbacks de una frase anterior
+  window.__avDemo = { get mode() { return mode; }, get cursor() { return cursor; }, get state() { return state; }, audio, files, durations };
+
+  // Duraciones: se leen de los metadatos de cada archivo (sin fetch, así funciona también desde file://).
+  files.forEach((f, i) => {
+    const a = new Audio();
+    a.preload = 'metadata';
+    a.addEventListener('loadedmetadata', () => { durations[i] = a.duration; });
+    a.src = f;
+  });
+  const dur = (i) => durations[i] || 5;
+  const total = () => sentences.reduce((n, _, i) => n + dur(i), 0);
+
   const setIcon = (d) => icon.firstElementChild.setAttribute('d', d);
   const announce = (t) => { live.textContent = t; };
   const clearTimer = () => { if (timer) { clearInterval(timer); timer = null; } };
   const paint = () => sentences.forEach((s, i) => { s.classList.toggle('now', state === 'playing' && i === cursor); s.classList.toggle('done', (state === 'playing' || state === 'paused') && i < cursor); });
+  const showNotice = (t) => { notice.textContent = t || ''; notice.hidden = !t; };
 
-  function go(next) {
+  function stopAudio() {
+    token++;
+    loaded = false;
+    audio.pause();
+    audio.removeAttribute('src');
+    audio.load();
+    if ('speechSynthesis' in window) speechSynthesis.cancel();
+  }
+
+  // Progreso: del audio real (frases anteriores + segundo actual) o, con la voz del sistema, por frase.
+  function tick() {
+    const done = sentences.reduce((n, _, i) => n + (i < cursor ? dur(i) : 0), 0);
+    const inSentence = mode === 'moss' && loaded && isFinite(audio.currentTime) ? audio.currentTime : 0;
+    const elapsed = mode === 'moss' ? done + inSentence : 0;
+    const frac = mode === 'moss' ? Math.min(1, elapsed / total()) : cursor / sentences.length;
+    const left = mode === 'moss' ? Math.max(0, Math.round((total() - elapsed) / rate)) : null;
+    meta.textContent = `frase ${cursor + 1} de ${sentences.length}` + (left === null ? '' : ` · quedan ${left} s`);
+    bar.style.width = `${frac * 100}%`;
+    progress.setAttribute('data-elapsed', elapsed.toFixed(2));
+  }
+
+  function speakSystem(i) {
+    const my = ++token;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(sentences[i].textContent);
+    u.lang = 'es-ES';
+    u.rate = rate;
+    u.onend = () => { if (my === token && state === 'playing') next(); };
+    u.onerror = (e) => { if (my === token && e.error !== 'canceled' && e.error !== 'interrupted') next(); };
+    speechSynthesis.speak(u);
+  }
+
+  function toSystem(reason) {
+    if (!('speechSynthesis' in window)) { go('error'); meta.textContent = 'No se pudo cargar el audio ni hay voz del sistema'; return; }
+    mode = 'system';
+    engine.textContent = 'web-speech';
+    engine.classList.remove('ok');
+    showNotice(`${reason} Se usa la voz del sistema (motor web-speech).`);
+    announce('Se usa la voz del sistema');
+    speakSystem(cursor);
+    tick();
+  }
+
+  function startSentence(i, offset) {
+    cursor = i;
+    paint();
+    if (mode === 'system') { speakSystem(i); tick(); return; }
+    const my = ++token;
+    loaded = false;
+    audio.src = files[i];
+    audio.playbackRate = rate;
+    const begin = () => {
+      if (my !== token) return;
+      loaded = true;
+      if (offset) audio.currentTime = offset;
+      const p = audio.play();
+      if (p && p.catch) p.catch(() => { if (my === token && state === 'playing') toSystem('No se pudo reproducir el audio de MOSS.'); });
+      tick();
+    };
+    audio.addEventListener('loadedmetadata', begin, { once: true });
+    audio.load();
+  }
+
+  function next() {
+    if (cursor + 1 >= sentences.length) { go('ended'); return; }
+    startSentence(cursor + 1);
+  }
+
+  audio.addEventListener('ended', () => { if (state === 'playing' && mode === 'moss') next(); });
+  audio.addEventListener('timeupdate', () => { if (state === 'playing' && mode === 'moss') tick(); });
+  audio.addEventListener('error', () => { if (audio.getAttribute('src') && state === 'playing' && mode === 'moss') toSystem('No se pudo cargar el audio de MOSS.'); });
+
+  function go(nextState, opts = {}) {
     clearTimer();
-    state = next;
-    av.classList.toggle('playing', next === 'playing');
-    confirmBox.hidden = next !== 'confirm';
+    const prev = state;
+    state = nextState;
+    av.classList.toggle('playing', nextState === 'playing');
+    confirmBox.hidden = nextState !== 'confirm';
     engine.className = 'chip';
-    document.querySelectorAll('.states button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.state === next || (next === 'paused' && b.dataset.state === 'playing'))));
-    if (next === 'idle') { setIcon(PLAY); title.textContent = 'Escuchar'; meta.textContent = '2 min · español'; bar.style.width = '0'; engine.textContent = 'moss · webgpu'; cursor = 0; play.setAttribute('aria-label', 'Escuchar el artículo'); }
-    if (next === 'confirm') { setIcon(PLAY); title.textContent = 'Descargar la voz'; meta.textContent = '168 MB · solo la primera vez'; announce('Hace falta descargar la voz, 168 megas'); }
-    if (next === 'download') {
+    document.querySelectorAll('.states button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.state === nextState || (nextState === 'paused' && b.dataset.state === 'playing'))));
+    if (nextState !== 'playing' && !(nextState === 'paused')) stopAudio();
+    if (nextState === 'paused') { token++; audio.pause(); if ('speechSynthesis' in window) speechSynthesis.cancel(); }
+    if (nextState === 'idle') { setIcon(PLAY); title.textContent = 'Escuchar'; meta.textContent = '2 min · español'; bar.style.width = '0'; engine.textContent = 'moss'; cursor = 0; mode = 'moss'; showNotice(''); play.setAttribute('aria-label', 'Escuchar el artículo'); }
+    if (nextState === 'confirm') { setIcon(PLAY); title.textContent = 'Descargar la voz'; meta.textContent = '168 MB · solo la primera vez'; announce('Hace falta descargar la voz, 168 megas'); }
+    if (nextState === 'download') {
       setIcon(PAUSE); title.textContent = 'Descargando la voz'; play.setAttribute('aria-label', 'Cancelar la descarga');
       pct = 0;
       timer = setInterval(() => { pct = Math.min(100, pct + (reduce ? 25 : 4)); bar.style.width = pct + '%'; meta.textContent = `${Math.round(168 * pct / 100)} de 168 MB · ${pct} %`; if (pct >= 100) { downloaded = true; go('playing'); } }, reduce ? 300 : 120);
     }
-    if (next === 'playing') {
-      setIcon(PAUSE); title.textContent = 'Leyendo'; engine.textContent = 'moss · webgpu'; engine.classList.add('ok'); play.setAttribute('aria-label', 'Pausar'); announce('Reproduciendo');
-      const tick = () => { const left = Math.max(0, Math.round((sentences.length - cursor) * 9 / rate)); meta.textContent = `frase ${cursor + 1} de ${sentences.length} · quedan ${left} s`; bar.style.width = `${(cursor / sentences.length) * 100}%`; paint(); };
-      tick();
-      timer = setInterval(() => { cursor++; if (cursor >= sentences.length) { go('ended'); return; } tick(); }, 2600 / rate);
+    if (nextState === 'playing') {
+      setIcon(PAUSE); title.textContent = 'Leyendo'; play.setAttribute('aria-label', 'Pausar'); announce('Reproduciendo');
+      if (mode === 'moss') { engine.textContent = 'moss'; engine.classList.add('ok'); } else { engine.textContent = 'web-speech'; }
+      if (opts.resume && mode === 'moss' && loaded && audio.paused) { audio.play().catch(() => toSystem('No se pudo reproducir el audio de MOSS.')); tick(); }
+      else startSentence(opts.from ?? cursor, opts.offset);
     }
-    if (next === 'paused') { setIcon(PLAY); title.textContent = 'En pausa'; play.setAttribute('aria-label', 'Continuar'); announce('En pausa'); }
-    if (next === 'ended') { setIcon(PLAY); title.textContent = 'Terminado'; meta.textContent = 'Escuchar otra vez'; bar.style.width = '100%'; cursor = 0; play.setAttribute('aria-label', 'Escuchar otra vez'); announce('Terminado'); }
-    if (next === 'fallback') { setIcon(PAUSE); title.textContent = 'Leyendo'; meta.textContent = 'frase 2 de 6 · quedan 40 s'; engine.textContent = 'voz del sistema'; bar.style.width = '18%'; cursor = 1; av.classList.add('playing'); }
-    if (next === 'error') { setIcon(RETRY); title.textContent = 'No se pudo descargar la voz'; meta.textContent = 'Revisa la conexión y vuelve a intentarlo'; engine.textContent = 'av_model_download_failed'; bar.style.width = '0'; play.setAttribute('aria-label', 'Reintentar'); announce('Error al descargar la voz'); }
+    if (nextState === 'paused') { setIcon(PLAY); title.textContent = 'En pausa'; play.setAttribute('aria-label', 'Continuar'); announce('En pausa'); }
+    if (nextState === 'ended') { setIcon(PLAY); title.textContent = 'Terminado'; meta.textContent = 'Escuchar otra vez'; bar.style.width = '100%'; cursor = 0; play.setAttribute('aria-label', 'Escuchar otra vez'); announce('Terminado'); }
+    if (nextState === 'error') { setIcon(RETRY); title.textContent = 'No se pudo descargar la voz'; meta.textContent = 'Revisa la conexión y vuelve a intentarlo'; engine.textContent = 'av_model_download_failed'; bar.style.width = '0'; play.setAttribute('aria-label', 'Reintentar'); announce('Error al descargar la voz'); }
     paint();
   }
 
+  // Voz del sistema a petición (botón de la galería de estados): lee de verdad con speechSynthesis.
+  function forceSystem() {
+    cursor = 0; mode = 'system';
+    go('playing');
+    engine.textContent = 'web-speech';
+    showNotice('Se usa la voz del sistema (motor web-speech), como respaldo cuando el audio de MOSS no está disponible.');
+  }
+
   play.addEventListener('click', () => {
-    if (state === 'idle' || state === 'ended') go(downloaded ? 'playing' : 'confirm');
+    if (state === 'idle' || state === 'ended') { mode = 'moss'; showNotice(''); go('playing', { from: 0 }); }
     else if (state === 'confirm') go('download');
     else if (state === 'download') go('idle');
-    else if (state === 'playing' || state === 'fallback') go('paused');
-    else if (state === 'paused') go('playing');
-    else if (state === 'error') go('download');
+    else if (state === 'playing') go('paused');
+    else if (state === 'paused') go('playing', { resume: true });
+    else if (state === 'error') go('idle');
   });
   $('av-ok').addEventListener('click', () => go('download'));
   $('av-cancel').addEventListener('click', () => go('idle'));
-  rateBtn.addEventListener('click', () => { rate = rates[(rates.indexOf(rate) + 1) % rates.length]; rateBtn.textContent = rate + '×'; if (state === 'playing') go('playing'); });
-  document.querySelectorAll('.states button').forEach((b) => b.addEventListener('click', () => { if (b.dataset.state === 'playing') downloaded = true; go(b.dataset.state); }));
-  sentences.forEach((s, i) => s.addEventListener('click', () => { if (state === 'playing' || state === 'paused') { cursor = i; go('playing'); } }));
+  rateBtn.addEventListener('click', () => {
+    rate = rates[(rates.indexOf(rate) + 1) % rates.length]; rateBtn.textContent = rate + '×';
+    audio.playbackRate = rate;
+    if (state === 'playing' && mode === 'system') speakSystem(cursor);
+    if (state === 'playing') tick();
+  });
+  document.querySelectorAll('.states button').forEach((b) => b.addEventListener('click', () => {
+    const s = b.dataset.state;
+    if (s === 'playing') { downloaded = true; mode = 'moss'; showNotice(''); go('playing', { from: 0 }); }
+    else if (s === 'fallback') forceSystem();
+    else go(s);
+  }));
+  sentences.forEach((s, i) => s.addEventListener('click', () => { if (state === 'playing' || state === 'paused') go('playing', { from: i }); }));
+
+  // Barra de progreso: saltar a un punto del audio.
+  progress.addEventListener('click', (e) => {
+    if (state !== 'playing' && state !== 'paused') return;
+    const r = progress.getBoundingClientRect();
+    let t = Math.min(0.999, Math.max(0, (e.clientX - r.left) / r.width)) * total();
+    let i = 0;
+    while (i < sentences.length - 1 && t >= dur(i)) { t -= dur(i); i++; }
+    go('playing', { from: i, offset: mode === 'moss' ? t : 0 });
+  });
 
   // Frames de audio (paso 3): 25 barras = 2 s de audio.
   const frames = $('frames');

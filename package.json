@@ -17,6 +17,7 @@
     "build": "tsup",
     "api:extract": "pnpm build && api-extractor run --local",
     "api:check": "pnpm build && api-extractor run",
+    "test:landing": "playwright test -c test/landing/playwright.config.ts",
     "test:package": "pnpm build && playwright test -c test/package/playwright.config.ts",
     "package:lint": "pnpm build && publint && attw --pack . --profile esm-only",
     "size": "pnpm build && size-limit"

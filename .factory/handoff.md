@@ -1,4 +1,5 @@
 # Handoff
 
-- T-035 (issue #25), parcial: aplicado el parche del intento 1 al spike (`spikes/t000-moss-browser/src`: códec en worker y por lotes). Cifras (3 repeticiones, mediana) en `docs/03-arquitectura/spikes/T-000-informe.md` §9: RTF base 1,84 → batch4-worker 1,18 (aún no tiempo real; mejor corrida 0,82).
-- Pendiente: KV en GPU sin Invalid Buffer, q4+WebGPU+KV GPU, WebNN; repetir en máquina sin carga ajena.
+- #26 hecho: la demo de la landing suena con MOSS real. Audio en `docs/04-diseno/ui/landing/audio/` (6 OGG/Opus mono, 288 KB, voz Nathan), generado con `scripts/generate-landing-audio.py` (venv del spike + soundfile). `build-landing.sh` copia `audio/` a `_site/`. `landing.html` reproduce con `Audio`, sincroniza progreso/resaltado/velocidad/salto y cae a `speechSynthesis` (web-speech) con aviso. Prueba: `pnpm test:landing` (verde); `pnpm verify` verde.
+- Siguiente: nada pendiente de este issue. No escuché el audio (sin oído en la sesión): conviene que una persona lo oiga; Nathan locuta español con acento inglés.
+- Pendiente anterior (T-035): KV en GPU, q4+WebGPU, WebNN (issues #27, #28).

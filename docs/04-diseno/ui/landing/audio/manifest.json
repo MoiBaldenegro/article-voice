@@ -1,0 +1,37 @@
+{
+  "engine": "MOSS-TTS-Nano-100M-ONNX",
+  "voice": "Nathan",
+  "format": "OGG/Opus mono 48 kHz",
+  "sentences": [
+    {
+      "file": "s01.ogg",
+      "text": "Durante años, escuchar un artículo dependía de servicios de pago en la nube.",
+      "duration": 5.44
+    },
+    {
+      "file": "s02.ogg",
+      "text": "Cada palabra costaba dinero y el texto viajaba a un servidor ajeno.",
+      "duration": 6.32
+    },
+    {
+      "file": "s03.ogg",
+      "text": "Hoy un modelo de cien millones de parámetros genera la voz en el propio navegador, a 48 kHz y en estéreo.",
+      "duration": 9.44
+    },
+    {
+      "file": "s04.ogg",
+      "text": "Lo hace por fragmentos de 80 milisegundos, así que empieza a sonar antes de terminar la primera frase.",
+      "duration": 7.12
+    },
+    {
+      "file": "s05.ogg",
+      "text": "El 3,5 % de los lectores lo prueba la primera semana.",
+      "duration": 4.96
+    },
+    {
+      "file": "s06.ogg",
+      "text": "Los demás simplemente siguen leyendo, como siempre.",
+      "duration": 3.76
+    }
+  ]
+}
