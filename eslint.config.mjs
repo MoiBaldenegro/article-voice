@@ -25,6 +25,7 @@ export default tseslint.config(
       'test/a11y/.vite-out/**',
       'test/a11y/serve.mjs',
       'temp/**',
+      'examples/**/*.mjs',
     ],
   },
   js.configs.recommended,

@@ -12,7 +12,7 @@ artículo de la página y lo lee en voz alta. Funciona con cualquier framework o
 
 | Motor (`engine`) | Estado | Qué hace |
 | --- | --- | --- |
-| `moss-server` | **Recomendado** | Voz neuronal [MOSS-TTS-Nano](https://github.com/OpenMOSS/MOSS-TTS-Nano) generada por **tu propio servidor**, compatible con OpenAI `/v1/audio/speech`. El visitante no descarga nada. Requiere `server-url`. |
+| `moss-server` | **Recomendado** | Voz neuronal [MOSS-TTS-Nano](https://github.com/OpenMOSS/MOSS-TTS-Nano) generada por **tu propio servidor**, compatible con OpenAI `/v1/audio/speech`. El visitante no descarga nada. Requiere `server-url`. Guía: [levantar tu servidor](docs/07-operacion/moss-server.md) y [ejemplo](examples/moss-server). |
 | `web-speech` | Respaldo | La voz del sistema (`speechSynthesis`). Sin servidor ni descargas; la calidad y los idiomas dependen del dispositivo. |
 | `moss-browser` | **Experimental, opt-in** | MOSS en el navegador del visitante. Hoy no llega a tiempo real (RTF 1,93 en WASM; ver ADR-0018) y descarga cientos de MiB. Solo se usa si lo pides con `engine="moss-browser"`; `auto` nunca lo elige. |
 
@@ -63,7 +63,7 @@ Un valor inválido emite `AV_INVALID_OPTION` y se usa el valor por defecto. List
 propiedades, métodos, eventos y estilos en el
 [contrato de la API](docs/04-diseno/contrato-api-publica.md); errores en el
 [catálogo](docs/04-diseno/catalogo-de-errores.md). Algunos atributos del contrato (resaltado de la
-frase, guía de `moss-server`) aún están en el backlog.
+frase) aún están en el backlog.
 
 ## Documentación
 

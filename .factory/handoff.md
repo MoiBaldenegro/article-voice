@@ -1,4 +1,5 @@
 # Handoff
 
-- #32 hecho: E2E en `test/e2e` (serve.mjs: página en 4176 + servidor falso /v1/audio/speech en 4177, PCM 16-bit 48 kHz; spec con play→ended, fallback con servidor caído, pause/resume/stop). Script `pnpm test:e2e` y paso en CI. `pnpm verify` y `pnpm test:e2e` verdes.
-- Siguiente paso: #33 (guía moss-server), #34 (resaltado), #35.
+- #33 hecho: `docs/07-operacion/moss-server.md` (contrato, CORS, privacidad, MOSS-TTS-Nano), `examples/moss-server/` (server.mjs + README + spec), enlazado desde README, configuracion.md y docs/README.md. eslint ignora `examples/**/*.mjs`. `pnpm verify` verde.
+- Pendiente no verificado: conectar de verdad MOSS-TTS-Nano (vLLM-Omni o script) al servidor de referencia.
+- Siguiente paso: #34 (resaltado), #35, #36, #37.

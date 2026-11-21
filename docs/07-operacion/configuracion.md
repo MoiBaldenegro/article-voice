@@ -43,6 +43,7 @@ Cualquier servidor que implemente `POST /v1/audio/speech` compatible con OpenAI:
 
 Respuesta: PCM de 16 bits little-endian a 48 kHz (`pcm`) o `wav`. El servidor debe permitir CORS
 desde el origen del sitio. Referencia: vLLM-Omni sirve MOSS-TTS-Nano con este contrato.
+Guía paso a paso y servidor de ejemplo: [moss-server.md](moss-server.md).
 
 ## Desarrollo y CI
 
