@@ -1,5 +1,4 @@
 # Handoff
 
-- #31 hecho: README reescrito (estado 0.1.0 pre-lanzamiento, motores, npm/CDN, atributos, desarrollo). Prueba nueva en test/package (snippet.html) que carga dist/index.js y comprueba el elemento. `pnpm test:package` y `pnpm verify` verdes.
-- Nota: el contrato menciona dist/cdn/article-voice.js, que no existe; el README usa dist/index.js.
-- Siguiente paso: #32 (E2E con servidor falso), #33, #34.
+- #32 hecho: E2E en `test/e2e` (serve.mjs: página en 4176 + servidor falso /v1/audio/speech en 4177, PCM 16-bit 48 kHz; spec con play→ended, fallback con servidor caído, pause/resume/stop). Script `pnpm test:e2e` y paso en CI. `pnpm verify` y `pnpm test:e2e` verdes.
+- Siguiente paso: #33 (guía moss-server), #34 (resaltado), #35.

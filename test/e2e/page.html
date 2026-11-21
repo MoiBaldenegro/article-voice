@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>article-voice E2E</title>
+  </head>
+  <body>
+    <h1>Artículo de prueba</h1>
+    <article id="post">
+      <p>Primera frase del artículo de prueba para la narración. Segunda frase del artículo.</p>
+      <p>Tercera frase que sigue en otro párrafo. Cuarta frase para cerrar el texto completo.</p>
+      <p>Quinta frase con algo más de contenido. Sexta frase final del artículo de prueba.</p>
+    </article>
+    <script type="module" src="/dist/index.js"></script>
+    <article-voice
+      id="av"
+      for="post"
+      server-url="http://localhost:4177"
+      min-words="5"
+    ></article-voice>
+    <article-voice
+      id="down"
+      for="post"
+      server-url="http://localhost:4179"
+      min-words="5"
+    ></article-voice>
+  </body>
+</html>
