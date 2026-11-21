@@ -26,6 +26,8 @@ export default tseslint.config(
       'test/a11y/serve.mjs',
       'temp/**',
       'examples/**/*.mjs',
+      'examples/react/**',
+      'examples/astro/**',
     ],
   },
   js.configs.recommended,

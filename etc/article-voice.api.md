@@ -106,6 +106,8 @@ export class ArticleVoiceElement extends BaseElement {
     // (undocumented)
     get htmlFor(): string | null;
     set htmlFor(v: string | null);
+    // Warning: (ae-forgotten-export) The symbol "MediaSessionLike" needs to be exported by the entry point index.d.ts
+    mediaSession: MediaSessionLike | null | undefined;
     // (undocumented)
     get minWords(): number;
     set minWords(v: number);

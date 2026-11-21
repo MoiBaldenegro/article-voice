@@ -89,6 +89,15 @@ export interface EngineRequest {
   readonly rate: number;
 }
 
+/** Subconjunto de `navigator.mediaSession` que usa el elemento (inyectable en pruebas). */
+export interface MediaSessionLike {
+  metadata: unknown;
+  playbackState: string;
+  setActionHandler(action: string, handler: (() => void) | null): void;
+}
+
+const MEDIA_ACTIONS = ['play', 'pause', 'stop', 'previoustrack', 'nexttrack'] as const;
+
 const EMPTY_SOURCE: ArticleSource = { candidates: () => [], extract: () => undefined };
 
 // Importar el paquete en SSR/Node no debe fallar: sin DOM la clase queda inerte.
@@ -131,6 +140,9 @@ export class ArticleVoiceElement extends BaseElement {
   /** D�nde se recuerdan velocidad y voz; por defecto localStorage (tolerante a fallos). */
   preferences: PreferencesStore = localStoragePreferences;
 
+  /** Media Session (teclas multimedia, pantalla de bloqueo); por defecto `navigator.mediaSession`. */
+  mediaSession: MediaSessionLike | null | undefined;
+
   readonly #registry = new NarrationRegistry();
   #active: ActiveEngine | null = null;
   #article: Article | null = null;
@@ -163,6 +175,7 @@ export class ArticleVoiceElement extends BaseElement {
   #prefVoice: string | undefined;
   #errorCode: string | undefined;
   #announced: ArticleVoiceState | null = null;
+  #mediaOwned = false;
 
   /** Resuelve cuando termina la selección de motor y la detección en curso (útil en pruebas). */
   ready: Promise<void> = Promise.resolve();
@@ -307,6 +320,7 @@ export class ArticleVoiceElement extends BaseElement {
     if (this.#registry.active?.isFinished === false) this.#safe(() => this.stop());
     this.#highlighted = -1;
     this.highlighter?.clear();
+    this.#syncMediaSession('idle');
   }
 
   attributeChangedCallback(name: string, oldValue: string | null, value: string | null): void {
@@ -672,8 +686,53 @@ export class ArticleVoiceElement extends BaseElement {
       return;
     }
     this.#state = state;
+    this.#syncMediaSession(state);
     this.#syncUi();
     this.#emit('article-voice:statechange', { state, previous });
+  }
+
+  #syncMediaSession(state: ArticleVoiceState): void {
+    const session =
+      this.mediaSession !== undefined
+        ? this.mediaSession
+        : typeof navigator !== 'undefined' && 'mediaSession' in navigator
+          ? (navigator.mediaSession as unknown as MediaSessionLike)
+          : null;
+    if (!session) return;
+    const active = state === 'playing' || state === 'paused';
+    try {
+      if (!active) {
+        if (this.#mediaOwned) {
+          this.#mediaOwned = false;
+          session.metadata = null;
+          session.playbackState = 'none';
+          for (const a of MEDIA_ACTIONS) session.setActionHandler(a, null);
+        }
+        return;
+      }
+      if (!this.#mediaOwned) {
+        this.#mediaOwned = true;
+        const title =
+          this.#article?.title || (typeof document !== 'undefined' ? document.title : '');
+        if (typeof MediaMetadata !== 'undefined') {
+          session.metadata = new MediaMetadata({
+            title: title || 'article-voice',
+            artist: typeof location !== 'undefined' ? location.hostname : '',
+          });
+        }
+        const handlers: Record<(typeof MEDIA_ACTIONS)[number], () => void> = {
+          play: () => void this.play().catch(() => undefined),
+          pause: () => this.pause(),
+          stop: () => this.stop(),
+          previoustrack: () => this.previous(),
+          nexttrack: () => this.next(),
+        };
+        for (const a of MEDIA_ACTIONS) session.setActionHandler(a, handlers[a]);
+      }
+      session.playbackState = state === 'playing' ? 'playing' : 'paused';
+    } catch {
+      // Acciones no soportadas por el navegador: la Media Session es opcional.
+    }
   }
 
   #applyRate(): void {

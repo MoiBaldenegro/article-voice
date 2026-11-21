@@ -1,0 +1,19 @@
+---
+// El elemento es del navegador: se importa en un <script> de cliente, no en el frontmatter (SSR).
+---
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>article-voice · Astro</title>
+  </head>
+  <body>
+    <article-voice server-url="https://tts.example.com"></article-voice>
+    <article>
+      <h1>Mi artículo</h1>
+      <p>Escribe aquí al menos ciento veinte palabras para que el componente detecte el artículo.</p>
+    </article>
+    <script>
+      import 'article-voice';
+    </script>
+  </body>
+</html>

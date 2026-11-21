@@ -12,3 +12,4 @@ test-results
 temp
 etc
 test/audio/.vite-out/
+examples/astro
