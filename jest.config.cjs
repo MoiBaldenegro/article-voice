@@ -7,7 +7,7 @@ module.exports = {
   transform: {
     '^.+\\.ts$': [
       'ts-jest',
-      { tsconfig: { module: 'commonjs', moduleResolution: 'node10', ignoreDeprecations: '5.0' } },
+      { tsconfig: { module: 'commonjs', moduleResolution: 'node10', ignoreDeprecations: '6.0' } },
     ],
   },
 };
