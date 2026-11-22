@@ -38,10 +38,11 @@ jobs:
       - uses: changesets/action@v2
         id: changesets
         with:
-          version: pnpm changeset version
-          publish: pnpm release
-          title: 'chore: Version Packages'
-          commit: 'chore: Version Packages'
+          version-script: pnpm changeset version
+          publish-script: pnpm release
+          pr-title: 'chore: Version Packages'
+          commit-message: 'chore: Version Packages'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: 'true'
