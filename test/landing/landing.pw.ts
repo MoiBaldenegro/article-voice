@@ -97,3 +97,10 @@ test('si el audio no carga, la demo lo indica y cae a web-speech', async ({ page
   await expect(page.locator('#av-notice')).toContainText('web-speech');
   await page.waitForFunction(() => (window as any).__spoken.length > 0);
 });
+
+test('el snippet de instalación apunta al paquete publicado en npm', async ({ page }) => {
+  await page.goto(url);
+  const code = await page.locator('#snippet-code').innerText();
+  expect(code).toContain('article-voice@0.1/dist/index.js');
+  expect(code).not.toContain('dist/cdn');
+});

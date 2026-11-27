@@ -1,6 +1,9 @@
-<title>article-voice</title>
-<meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="Componente web que detecta el artículo de la página y lo lee en voz alta con MOSS-TTS-Nano desde tu servidor o con la voz del sistema.">
+<title>article-voice · Que cualquier artículo se pueda escuchar</title>
+<meta name="theme-color" content="#070716">
+<meta name="description" content="Componente web que detecta el artículo de la página y lo lee en voz alta. Voz neuronal MOSS-TTS-Nano desde tu propio servidor o la voz del sistema. Publicado en npm como article-voice 0.1.0.">
+<meta property="og:title" content="article-voice · Que cualquier artículo se pueda escuchar">
+<meta property="og:description" content="Un elemento HTML que lee el artículo de tu página en voz alta. Publicado en npm como article-voice 0.1.0.">
+<meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
@@ -52,34 +55,47 @@ p { margin: 0; }
 /* Cabecera */
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--color-background); }
 header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: rgba(7,7,22,.86); backdrop-filter: blur(10px); border-bottom: 1px solid var(--color-border); }
-header.top .wrap { display: flex; align-items: center; gap: 28px; padding-block: 14px; }
+header.top .wrap { display: flex; align-items: center; gap: 18px; padding-block: 14px; }
 .brand { display: flex; align-items: center; gap: 10px; font: 500 15px/1 var(--font-mono); color: var(--color-text); }
 .brand-mark { width: 22px; height: 22px; display: grid; grid-template-columns: repeat(5, 1fr); align-items: end; gap: 2px; }
 .brand-mark i { display: block; background: var(--color-accent); }
 .brand-mark i:nth-child(1) { height: 30%; } .brand-mark i:nth-child(2) { height: 75%; } .brand-mark i:nth-child(3) { height: 100%; } .brand-mark i:nth-child(4) { height: 55%; } .brand-mark i:nth-child(5) { height: 25%; }
-nav.links { display: flex; gap: 22px; margin-left: auto; font-size: 14px; }
+.version-pill { display: inline-flex; align-items: center; gap: 8px; font: 500 12px/1 var(--font-mono); color: var(--color-text-secondary); border: 1px solid var(--color-border-strong); padding: 7px 10px; transition: border-color var(--transition-default), color var(--transition-default); }
+.version-pill:hover { border-color: var(--color-success); color: var(--color-text); }
+.version-pill .dot-ok { width: 7px; height: 7px; background: var(--color-success); }
+nav.links { display: flex; align-items: center; gap: 22px; margin-left: auto; font-size: 14px; }
 nav.links a { color: var(--color-text-secondary); }
 nav.links a:hover { color: var(--color-text); }
-@media (max-width: 640px) { nav.links a:not(.gh) { display: none; } }
+nav.links .gh { color: var(--color-text); }
+@media (max-width: 720px) { nav.links a:not(.gh) { display: none; } }
+@media (max-width: 520px) { .version-pill { display: none; } }
 
 /* Botones (el acento es señal, no relleno) */
-.btn { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 18px; border: 1px solid var(--color-border-strong); background: var(--color-surface); color: var(--color-text); font: 500 14px/1 var(--font-sans); cursor: pointer; transition: border-color var(--transition-default), color var(--transition-default), transform var(--transition-default); border-radius: var(--radius-square); }
-.btn:hover { border-color: var(--color-accent); color: var(--color-text); transform: translateY(-2px); }
+.btn { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 18px; border: 1px solid var(--color-border-strong); background: var(--color-surface); color: var(--color-text); font: 500 14px/1 var(--font-sans); cursor: pointer; transition: border-color var(--transition-default), color var(--transition-default), transform var(--transition-default), box-shadow var(--transition-default); border-radius: var(--radius-square); }
+.btn:hover { border-color: var(--color-accent); color: var(--color-text); transform: translateY(-2px); box-shadow: var(--shadow-card-hover); }
 .btn--accent { border-color: var(--color-accent); }
+.btn--accent:hover { box-shadow: 0 0 0 1px var(--color-accent), 0 18px 40px -20px rgba(179,122,194,.55); }
 .btn--accent .dot { width: 8px; height: 8px; background: var(--color-accent); }
 .btn--quiet { background: transparent; }
 
 /* Héroe */
-.hero { padding-block: 70px 56px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 56px; align-items: start; }
-@media (max-width: 900px) { .hero { grid-template-columns: 1fr; gap: 42px; padding-block: 42px; } }
+.hero-shell { position: relative; overflow: hidden; border-bottom: 1px solid var(--color-border); }
+.hero-shell::before { content: ""; position: absolute; inset: -30% -10% auto -10%; height: 680px; pointer-events: none; background: radial-gradient(55% 55% at 18% 0%, rgba(179,122,194,.18), transparent 70%), radial-gradient(45% 45% at 88% 8%, rgba(57,201,138,.09), transparent 70%); }
+.hero { position: relative; padding-block: 70px 60px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 56px; align-items: start; }
+.hero > * { min-width: 0; }
+@media (max-width: 900px) { .hero { grid-template-columns: 1fr; gap: 42px; padding-block: 44px; } }
 .hero h1 { font: 500 clamp(36px, 5.2vw, 58px)/1.04 var(--font-display); letter-spacing: -.02em; margin-top: 18px; }
 .hero h1 em { font-style: normal; color: var(--color-accent); }
 .hero .lede { margin-top: 21px; font-size: 18px; color: var(--color-text-secondary); max-width: 34em; }
 .hero .ctas { display: flex; flex-wrap: wrap; gap: var(--gap); margin-top: 28px; }
+.trust { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.trust span { font: 500 11px/1 var(--font-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--color-text-muted); border: 1px solid var(--color-border); padding: 7px 9px; }
 .snippet { margin-top: 28px; border: 1px solid var(--color-border); background: var(--color-surface); }
 .snippet-head { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--color-border); }
 .snippet pre { margin: 0; padding: 14px; overflow-x: auto; font: 400 13px/1.7 var(--font-mono); color: var(--color-text-secondary); }
 .snippet .tag { color: var(--color-accent-hover); } .snippet .attr { color: var(--color-text); } .snippet .str { color: var(--color-success); }
+.snippet-alt { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; padding: 11px 14px; border: 1px solid var(--color-border); background: var(--color-surface); font-size: 13px; }
+.snippet-alt code { font-family: var(--font-mono); color: var(--color-text-secondary); }
 .copy { background: none; border: 0; color: var(--color-text-muted); font: 500 12px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; cursor: pointer; min-height: 32px; padding: 0 4px; }
 .copy:hover { color: var(--color-text); }
 
@@ -87,14 +103,17 @@ nav.links a:hover { color: var(--color-text); }
 .demo { border: 1px solid var(--color-border); background: var(--color-surface); box-shadow: var(--shadow-card-rest); }
 .demo-bar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--color-border); }
 .demo-bar span.url { font: 400 12px/1 var(--font-mono); color: var(--color-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.demo-bar i { width: 8px; height: 8px; border: 1px solid var(--color-border-strong); }
+.demo-bar i { width: 8px; height: 8px; border-radius: 50%; }
+.demo-bar i:nth-child(1) { background: var(--color-danger); }
+.demo-bar i:nth-child(2) { background: #F0B95B; }
+.demo-bar i:nth-child(3) { background: var(--color-success); }
 .demo-body { padding: 28px; display: grid; gap: 21px; }
 @media (max-width: 480px) { .demo-body { padding: 21px 16px; } }
 .kicker { font: 500 12px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--color-accent); }
 .demo-body h3.art-title { font: 600 24px/1.2 var(--font-sans); letter-spacing: -.01em; }
 .byline { font-size: 13px; color: var(--color-text-muted); }
 .art-text { display: grid; gap: 14px; color: var(--color-text-secondary); font-size: 15.5px; line-height: 1.75; }
-.art-text .s { transition: background-color var(--transition-default), color var(--transition-default); padding: 1px 0; }
+.art-text .s { transition: background-color var(--transition-default), color var(--transition-default); padding: 1px 0; cursor: pointer; }
 .art-text .s.now { background: var(--color-accent-wash); color: var(--color-text); box-shadow: 0 2px 0 var(--color-accent); }
 .art-text .s.done { color: var(--color-text-muted); }
 
@@ -107,7 +126,7 @@ nav.links a:hover { color: var(--color-text); }
 .av-line { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; font-size: 14px; }
 .av-line strong { font-weight: 500; }
 .av-meta { font: 400 12px/1 var(--font-mono); color: var(--color-text-muted); }
-.av-progress { height: 2px; background: var(--color-border-strong); position: relative; overflow: hidden; }
+.av-progress { height: 2px; background: var(--color-border-strong); position: relative; overflow: hidden; cursor: pointer; }
 .av-progress b { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--color-accent); transition: width .4s linear; }
 .av-side { display: flex; align-items: center; gap: 7px; }
 .chip { font: 500 11px/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--color-text-secondary); border: 1px solid var(--color-border-strong); padding: 6px 7px; white-space: nowrap; }
@@ -125,7 +144,6 @@ nav.links a:hover { color: var(--color-text); }
 @media (max-width: 480px) { .av { grid-template-columns: auto minmax(0, 1fr); } .av-side { grid-column: 1 / -1; justify-content: flex-start; } }
 .demo-note { font-size: 12px; color: var(--color-text-muted); padding: 0 28px 21px; }
 .demo-notice { padding: 0; margin: 0; color: var(--color-text-secondary); }
-.av-progress { cursor: pointer; }
 .states { display: flex; flex-wrap: wrap; gap: 7px; padding: 0 28px 24px; }
 .states button { background: none; border: 1px solid var(--color-border); color: var(--color-text-muted); font: 500 11px/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; padding: 8px 9px; cursor: pointer; border-radius: 0; min-height: 32px; }
 .states button[aria-pressed="true"] { color: var(--color-text); border-color: var(--color-accent); }
@@ -133,7 +151,7 @@ nav.links a:hover { color: var(--color-text); }
 /* Secciones */
 section.band { border-top: 1px solid var(--color-border); padding-block: 70px; }
 @media (max-width: 640px) { section.band { padding-block: 49px; } }
-.sec-head { display: grid; gap: 14px; max-width: 40em; margin-bottom: 42px; }
+.sec-head { display: grid; gap: 14px; max-width: 42em; margin-bottom: 42px; }
 .pipeline { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--color-border); }
 @media (max-width: 860px) { .pipeline { grid-template-columns: 1fr; } }
 .step { padding: 28px; display: grid; gap: 14px; align-content: start; border-right: 1px solid var(--color-border); min-width: 0; }
@@ -146,6 +164,15 @@ section.band { border-top: 1px solid var(--color-border); padding-block: 70px; }
 .specimen .seg { display: inline-block; border: 1px dashed var(--color-border-strong); padding: 0 5px; margin: 2px 0; }
 .frames { display: flex; gap: 2px; align-items: end; height: 34px; }
 .frames i { flex: 1; background: var(--color-accent); opacity: .85; }
+
+/* Qué incluye */
+.features { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--color-border); border: 1px solid var(--color-border); }
+@media (max-width: 900px) { .features { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .features { grid-template-columns: 1fr; } }
+.feature { background: var(--color-background); padding: 22px; display: grid; gap: 8px; align-content: start; }
+.feature .n { font: 500 11px/1 var(--font-mono); color: var(--color-accent); letter-spacing: .08em; }
+.feature h3 { font-size: 15px; }
+.feature p { font-size: 13.5px; color: var(--color-text-secondary); }
 
 .engines { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 640px; }
 .table-scroll { overflow-x: auto; border: 1px solid var(--color-border); }
@@ -168,6 +195,9 @@ section.band { border-top: 1px solid var(--color-border); padding-block: 70px; }
 .principle:nth-child(even) { padding-left: 28px; border-left: 1px solid var(--color-border); }
 @media (max-width: 720px) { .principle:nth-child(even) { padding-left: 0; border-left: 0; } }
 
+.published { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px; padding: 24px 26px; border: 1px solid rgba(57,201,138,.35); background: linear-gradient(180deg, rgba(57,201,138,.08), transparent), var(--color-surface); margin-bottom: 42px; }
+.published h3 { font-size: 20px; }
+.published .actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .status { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 42px; }
 @media (max-width: 860px) { .status { grid-template-columns: 1fr; } }
 .measures { display: grid; border: 1px solid var(--color-border); }
@@ -176,9 +206,9 @@ section.band { border-top: 1px solid var(--color-border); padding-block: 70px; }
 .measure .v { font: 500 15px/1 var(--font-mono); font-variant-numeric: tabular-nums; }
 .measure .v.ok { color: var(--color-success); } .measure .v.warn { color: var(--color-accent-hover); }
 .roadmap { list-style: none; margin: 0; padding: 0; display: grid; }
-.roadmap li { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--color-border); font-size: 14px; }
+.roadmap li { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--color-border); font-size: 14px; }
 .roadmap li .when { font: 500 12px/1.6 var(--font-mono); color: var(--color-text-muted); }
-.roadmap li.now .when { color: var(--color-accent); }
+.roadmap li.now .when { color: var(--color-success); }
 
 details.faq { border-bottom: 1px solid var(--color-border); }
 details.faq summary { cursor: pointer; padding: 18px 0; font-weight: 500; list-style: none; display: flex; justify-content: space-between; gap: 14px; }
@@ -199,8 +229,10 @@ footer .row { display: flex; flex-wrap: wrap; gap: 21px; justify-content: space-
 <header class="top">
   <div class="wrap">
     <a class="brand" href="#inicio" aria-label="article-voice, inicio"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>article-voice</a>
+    <a class="version-pill" href="https://www.npmjs.com/package/article-voice" aria-label="Versión 0.1.0 publicada en npm"><span class="dot-ok" aria-hidden="true"></span>v0.1.0 · npm</a>
     <nav class="links" aria-label="Principal">
       <a href="#como-funciona">Cómo funciona</a>
+      <a href="#motores">Motores</a>
       <a href="#integrar">Integrar</a>
       <a href="#estado">Estado</a>
       <a class="gh" href="https://github.com/MoiBaldenegro/article-voice">GitHub ↗</a>
@@ -209,78 +241,108 @@ footer .row { display: flex; flex-wrap: wrap; gap: 21px; justify-content: space-
 </header>
 
 <main id="inicio">
-  <div class="wrap hero">
-    <div>
-      <span class="label">Componente web · código abierto · MIT</span>
-      <h1>Que cualquier artículo se pueda <em>escuchar</em>.</h1>
-      <p class="lede">Una etiqueta encuentra el artículo de tu página y lo lee en voz alta. Hoy la voz neuronal MOSS-TTS-Nano la genera tu propio servidor (<span class="mono">moss-server</span>) y, si no hay uno, el componente usa la voz del sistema y lo avisa. Correr MOSS dentro del navegador existe solo como experimento: todavía no es lo bastante rápido.</p>
-      <div class="ctas">
-        <a class="btn btn--accent" href="#demo"><span class="dot" aria-hidden="true"></span>Escuchar la demo</a>
-        <a class="btn btn--quiet" href="https://github.com/MoiBaldenegro/article-voice">Ver el código</a>
-      </div>
-      <div class="snippet">
-        <div class="snippet-head"><span class="label">Instalar en cualquier página</span><button class="copy" id="copy-snippet" type="button">Copiar</button></div>
+  <div class="hero-shell">
+    <div class="wrap hero">
+      <div>
+        <span class="label">Componente web · publicado en npm · MIT</span>
+        <h1>Que cualquier artículo se pueda <em>escuchar</em>.</h1>
+        <p class="lede">Un elemento HTML encuentra el artículo de tu página y lo lee en voz alta. La voz neuronal MOSS-TTS-Nano la genera tu propio servidor (<span class="mono">moss-server</span>); si no hay uno, el componente usa la voz del sistema y lo avisa. Correr MOSS dentro del navegador existe solo como experimento: todavía no es lo bastante rápido.</p>
+        <div class="ctas">
+          <a class="btn btn--accent" href="#demo"><span class="dot" aria-hidden="true"></span>Escuchar la demo</a>
+          <a class="btn" href="#integrar">Instalar</a>
+          <a class="btn btn--quiet" href="https://github.com/MoiBaldenegro/article-voice">Ver el código</a>
+        </div>
+        <div class="trust" aria-label="En una frase">
+          <span>0 dependencias</span>
+          <span>≈ 28 kB gzip</span>
+          <span>MIT</span>
+          <span>sin cookies</span>
+        </div>
+        <div class="snippet">
+          <div class="snippet-head"><span class="label">Instalar en cualquier página</span><button class="copy" id="copy-snippet" type="button">Copiar</button></div>
 <pre id="snippet-code"><span class="tag">&lt;script</span> <span class="attr">type</span>=<span class="str">"module"</span>
-  <span class="attr">src</span>=<span class="str">"https://cdn.jsdelivr.net/npm/article-voice@1/dist/cdn/article-voice.js"</span><span class="tag">&gt;&lt;/script&gt;</span>
+  <span class="attr">src</span>=<span class="str">"https://cdn.jsdelivr.net/npm/article-voice@0.1/dist/index.js"</span><span class="tag">&gt;&lt;/script&gt;</span>
 
-<span class="tag">&lt;article-voice&gt;&lt;/article-voice&gt;</span></pre>
+<span class="tag">&lt;article-voice</span> <span class="attr">server-url</span>=<span class="str">"https://tts.tu-sitio.com"</span><span class="tag">&gt;&lt;/article-voice&gt;</span></pre>
+        </div>
+        <div class="snippet-alt"><span class="label">Con bundler</span><code>npm install article-voice</code></div>
       </div>
-    </div>
 
-    <div id="demo">
-      <div class="demo" aria-label="Demostración del componente sobre un artículo de ejemplo">
-        <div class="demo-bar"><i></i><i></i><i></i><span class="url">tu-blog.com/notas/la-radio-en-casa</span></div>
-        <div class="demo-body">
-          <div>
-            <div class="kicker">Notas · Tecnología</div>
-          </div>
-          <h3 class="art-title">La radio volvió a casa, ahora dentro del navegador</h3>
-          <div class="byline">Por Lucía Ramos · 20 de noviembre de 2026</div>
+      <div id="demo">
+        <div class="demo" aria-label="Demostración del componente sobre un artículo de ejemplo">
+          <div class="demo-bar"><i></i><i></i><i></i><span class="url">tu-blog.com/notas/la-radio-en-casa</span></div>
+          <div class="demo-body">
+            <div>
+              <div class="kicker">Notas · Tecnología</div>
+            </div>
+            <h3 class="art-title">La radio volvió a casa, ahora dentro del navegador</h3>
+            <div class="byline">Por Lucía Ramos · 20 de noviembre de 2026</div>
 
-          <div class="av" id="av" role="group" aria-label="Escuchar este artículo">
-            <button class="av-play" id="av-play" type="button" aria-label="Escuchar el artículo">
-              <svg viewBox="0 0 16 16" aria-hidden="true" id="av-icon"><path d="M3 1.5v13l11-6.5z"/></svg>
-            </button>
-            <div class="av-main">
-              <div class="av-line"><strong id="av-title">Escuchar</strong><span class="av-meta" id="av-meta">2 min · español</span></div>
-              <div class="av-progress" id="av-progress" aria-hidden="true"><b id="av-bar"></b></div>
+            <div class="av" id="av" role="group" aria-label="Escuchar este artículo">
+              <button class="av-play" id="av-play" type="button" aria-label="Escuchar el artículo">
+                <svg viewBox="0 0 16 16" aria-hidden="true" id="av-icon"><path d="M3 1.5v13l11-6.5z"/></svg>
+              </button>
+              <div class="av-main">
+                <div class="av-line"><strong id="av-title">Escuchar</strong><span class="av-meta" id="av-meta">2 min · español</span></div>
+                <div class="av-progress" id="av-progress" aria-hidden="true"><b id="av-bar"></b></div>
+              </div>
+              <div class="av-side">
+                <span class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+                <span class="chip" id="av-engine">moss</span>
+                <button class="rate" id="av-rate" type="button" aria-label="Velocidad de lectura">1×</button>
+              </div>
+              <div class="av-confirm" id="av-confirm" hidden>
+                <span>La voz se descarga una sola vez y se guarda en este navegador. El texto no sale de tu equipo.</span>
+                <span class="row"><button class="btn sm" id="av-cancel" type="button">Ahora no</button><button class="btn sm btn--accent" id="av-ok" type="button"><span class="dot" aria-hidden="true"></span>Descargar · 168 MB</button></span>
+              </div>
             </div>
-            <div class="av-side">
-              <span class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
-              <span class="chip" id="av-engine">moss</span>
-              <button class="rate" id="av-rate" type="button" aria-label="Velocidad de lectura">1×</button>
-            </div>
-            <div class="av-confirm" id="av-confirm" hidden>
-              <span>La voz se descarga una sola vez y se guarda en este navegador. El texto no sale de tu equipo.</span>
-              <span class="row"><button class="btn sm" id="av-cancel" type="button">Ahora no</button><button class="btn sm btn--accent" id="av-ok" type="button"><span class="dot" aria-hidden="true"></span>Descargar · 168 MB</button></span>
-            </div>
-          </div>
-          <p class="demo-note demo-notice" id="av-notice" role="status" hidden></p>
-          <p class="sr-status" id="av-live" aria-live="polite" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)"></p>
+            <p class="demo-note demo-notice" id="av-notice" role="status" hidden></p>
+            <p class="sr-status" id="av-live" aria-live="polite" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)"></p>
 
-          <div class="art-text" id="art-text">
-            <p><span class="s">Durante años, escuchar un artículo dependía de servicios de pago en la nube.</span> <span class="s">Cada palabra costaba dinero y el texto viajaba a un servidor ajeno.</span></p>
-            <p><span class="s">Hoy un modelo de cien millones de parámetros genera la voz en el propio navegador, a 48 kHz y en estéreo.</span> <span class="s">Lo hace por fragmentos de 80 milisegundos, así que empieza a sonar antes de terminar la primera frase.</span></p>
-            <p><span class="s">El 3,5 % de los lectores lo prueba la primera semana.</span> <span class="s">Los demás simplemente siguen leyendo, como siempre.</span></p>
+            <div class="art-text" id="art-text">
+              <p><span class="s">Durante años, escuchar un artículo dependía de servicios de pago en la nube.</span> <span class="s">Cada palabra costaba dinero y el texto viajaba a un servidor ajeno.</span></p>
+              <p><span class="s">Hoy un modelo de cien millones de parámetros genera la voz en el propio navegador, a 48 kHz y en estéreo.</span> <span class="s">Lo hace por fragmentos de 80 milisegundos, así que empieza a sonar antes de terminar la primera frase.</span></p>
+              <p><span class="s">El 3,5 % de los lectores lo prueba la primera semana.</span> <span class="s">Los demás simplemente siguen leyendo, como siempre.</span></p>
+            </div>
           </div>
+          <div class="states" role="group" aria-label="Ver un estado del componente">
+            <button type="button" data-state="idle" aria-pressed="true">Reposo</button>
+            <button type="button" data-state="confirm" aria-pressed="false">Confirmar descarga</button>
+            <button type="button" data-state="download" aria-pressed="false">Descargando</button>
+            <button type="button" data-state="playing" aria-pressed="false">Leyendo</button>
+            <button type="button" data-state="fallback" aria-pressed="false">Voz del sistema</button>
+            <button type="button" data-state="error" aria-pressed="false">Error</button>
+          </div>
+          <p class="demo-note">Audio generado con MOSS-TTS-Nano para la demo. En tu sitio, el componente usa tu servidor (<span class="mono">moss-server</span>) o, como respaldo, la voz del sistema; la descarga corresponde al motor <span class="mono">moss-browser</span> experimental.</p>
         </div>
-        <div class="states" role="group" aria-label="Ver un estado del componente">
-          <button type="button" data-state="idle" aria-pressed="true">Reposo</button>
-          <button type="button" data-state="confirm" aria-pressed="false">Confirmar descarga</button>
-          <button type="button" data-state="download" aria-pressed="false">Descargando</button>
-          <button type="button" data-state="playing" aria-pressed="false">Leyendo</button>
-          <button type="button" data-state="fallback" aria-pressed="false">Voz del sistema</button>
-          <button type="button" data-state="error" aria-pressed="false">Error</button>
-        </div>
-        <p class="demo-note">Audio generado con MOSS-TTS-Nano. En tu sitio, el componente lo genera con tu servidor o en el navegador (experimental).</p>
       </div>
     </div>
   </div>
 
+  <section class="band" id="incluye">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="label">01 · Qué incluye la 0.1.0</span>
+        <h2>Todo lo que ya puedes usar hoy</h2>
+        <p class="muted">La primera versión publicada reúne detección, lectura, motores, resaltado, preferencias y accesibilidad. Estas son las piezas que trae el paquete.</p>
+      </div>
+      <div class="features">
+        <div class="feature"><span class="n">01</span><h3>Detección automática</h3><p>Encuentra el artículo entre menús, barras y pies; o elígelo tú con <span class="mono">for</span>.</p></div>
+        <div class="feature"><span class="n">02</span><h3>Resaltado de la frase</h3><p>Sigue la lectura sin modificar el DOM del artículo (CSS Custom Highlight API).</p></div>
+        <div class="feature"><span class="n">03</span><h3>Velocidad y voz</h3><p>Preferencias persistentes: la velocidad se aplica al instante y la voz en la siguiente frase.</p></div>
+        <div class="feature"><span class="n">04</span><h3>Media Session</h3><p>Teclas multimedia y controles en la pantalla de bloqueo del sistema.</p></div>
+        <div class="feature"><span class="n">05</span><h3>Español e inglés</h3><p>La interfaz habla el idioma del artículo; los textos están en es/en.</p></div>
+        <div class="feature"><span class="n">06</span><h3>Accesible</h3><p>Región <span class="mono">aria-live</span>, foco visible y respeto a <span class="mono">prefers-reduced-motion</span>.</p></div>
+        <div class="feature"><span class="n">07</span><h3>Tres motores con respaldo</h3><p><span class="mono">moss-server</span>, voz del sistema y <span class="mono">moss-browser</span> experimental; si algo falla, lo avisa.</p></div>
+        <div class="feature"><span class="n">08</span><h3>Cero dependencias</h3><p>Un único módulo ES. Licencia MIT. Sin telemetría ni cookies.</p></div>
+      </div>
+    </div>
+  </section>
+
   <section class="band" id="como-funciona">
     <div class="wrap">
       <div class="sec-head">
-        <span class="label">Cómo funciona</span>
+        <span class="label">02 · Cómo funciona</span>
         <h2>De la página al oído en tres pasos</h2>
         <p class="muted">La detección y la preparación del texto ocurren en la pestaña del visitante. La voz la genera tu servidor con MOSS o, como respaldo, el sistema operativo. El modelo en el navegador es experimental.</p>
       </div>
@@ -310,7 +372,7 @@ footer .row { display: flex; flex-wrap: wrap; gap: 21px; justify-content: space-
   <section class="band" id="motores">
     <div class="wrap">
       <div class="sec-head">
-        <span class="label">Motores de voz</span>
+        <span class="label">03 · Motores de voz</span>
         <h2>Siempre hay voz; MOSS en tu servidor</h2>
         <p class="muted">Con <span class="mono">engine="auto"</span> el componente elige entre <span class="mono">moss-server</span> y la voz del sistema, y nunca <span class="mono">moss-browser</span>. Cuando usa la voz del sistema, lo dice en pantalla.</p>
       </div>
@@ -330,9 +392,9 @@ footer .row { display: flex; flex-wrap: wrap; gap: 21px; justify-content: space-
   <section class="band" id="integrar">
     <div class="wrap">
       <div class="sec-head">
-        <span class="label">Integrar</span>
+        <span class="label">04 · Integrar</span>
         <h2>Un elemento HTML. Funciona en cualquier framework</h2>
-        <p class="muted">Es un Custom Element estándar con Shadow DOM: tus estilos no lo rompen y los suyos no tocan tu sitio. Se personaliza con variables <span class="mono">--av-*</span>.</p>
+        <p class="muted">Es un Custom Element estándar con Shadow DOM: tus estilos no lo rompen y los suyos no tocan tu sitio. Se personaliza con variables <span class="mono">--av-*</span>. Sin <span class="mono">server-url</span> lee con la voz del sistema.</p>
       </div>
       <div class="tabs" role="tablist" aria-label="Ejemplos por framework" id="tabs"></div>
       <div class="tabpanel" role="tabpanel" id="tabpanel" tabindex="0"><pre id="tabcode"></pre></div>
@@ -342,7 +404,7 @@ footer .row { display: flex; flex-wrap: wrap; gap: 21px; justify-content: space-
   <section class="band" id="principios">
     <div class="wrap">
       <div class="sec-head">
-        <span class="label">Respeto por quien escucha</span>
+        <span class="label">05 · Respeto por quien escucha</span>
         <h2>Lo que el componente nunca hace</h2>
       </div>
       <div class="principles">
@@ -357,29 +419,39 @@ footer .row { display: flex; flex-wrap: wrap; gap: 21px; justify-content: space-
   <section class="band" id="estado">
     <div class="wrap">
       <div class="sec-head">
-        <span class="label">Estado del proyecto</span>
-        <h2>En desarrollo, con los números a la vista</h2>
-        <p class="muted">Antes de escribir el componente se midió si MOSS puede hablar en un navegador sin cortes (informe T-000). No puede todavía, y por eso el motor recomendado es el servidor. Estas son las cifras, en Chrome 157 con un i7-12700 y una RTX 4060 Ti.</p>
+        <span class="label">06 · Estado del proyecto</span>
+        <h2>Publicado, con los números a la vista</h2>
+        <p class="muted">La 0.1.0 ya está en npm. Antes de escribir el componente se midió si MOSS puede hablar en un navegador sin cortes (informe T-000 y T-035). Todavía no, y por eso el motor recomendado es el servidor.</p>
+      </div>
+      <div class="published">
+        <div>
+          <span class="label">Publicado</span>
+          <h3>article-voice 0.1.0 ya está en npm</h3>
+          <p class="muted">Detección, lectura, <span class="mono">moss-server</span>, voz del sistema, resaltado, velocidad y voz, Media Session, i18n y accesibilidad.</p>
+        </div>
+        <div class="actions">
+          <a class="btn btn--accent" href="https://www.npmjs.com/package/article-voice">npm install article-voice</a>
+          <a class="btn btn--quiet" href="https://github.com/MoiBaldenegro/article-voice/releases">Ver la release</a>
+        </div>
       </div>
       <div class="status">
-        <div class="measures" aria-label="Mediciones del spike T-000">
+        <div class="measures" aria-label="Mediciones de los spikes T-000 y T-035">
           <div class="measure"><span>Tokenizador portado a TypeScript, idéntico al oficial</span><span class="v ok">9/9</span></div>
           <div class="measure"><span>Frames generados idénticos al runtime oficial</span><span class="v ok">bit a bit</span></div>
           <div class="measure"><span>Primer audio en CPU, con el modelo cargado</span><span class="v ok">≈ 0,22 s</span></div>
-          <div class="measure"><span>Velocidad en CPU nativa, fuera del navegador (RTF)</span><span class="v ok">0,4</span></div>
-          <div class="measure"><span>Navegador · WebAssembly 4 hilos, modelo oficial (RTF)</span><span class="v warn">1,85</span></div>
-          <div class="measure"><span>Navegador · WebGPU, modelo oficial (RTF)</span><span class="v warn">10,6</span></div>
-          <div class="measure"><span>Navegador · WebGPU, variante q4 (RTF)</span><span class="v warn">5,5</span></div>
-          <div class="measure"><span>Primer audio: WASM 4 hilos · q4 en WebGPU</span><span class="v ok">0,9 s · 0,9 s</span></div>
+          <div class="measure"><span>Velocidad en CPU nativa, fuera del navegador (RTF)</span><span class="v ok">0,40–0,42</span></div>
+          <div class="measure"><span>Navegador · WebAssembly 4 hilos + worker + códec (RTF)</span><span class="v warn">1,18</span></div>
+          <div class="measure"><span>Navegador · q4 + WebGPU + KV en GPU (RTF)</span><span class="v warn">3,02</span></div>
+          <div class="measure"><span>Navegador · WebGPU oficial + KV en GPU (RTF)</span><span class="v warn">4,80</span></div>
+          <div class="measure"><span>Primer audio: WASM + worker · q4 + KV</span><span class="v ok">≈ 1,4 s · ≈ 1,2 s</span></div>
           <div class="measure"><span>Descarga de la voz: oficial · q4</span><span class="v">728 · 168 MiB</span></div>
           <div class="measure"><span>La q4 corre en WebAssembly</span><span class="v warn">no</span></div>
           <div class="measure"><span>Para sonar sin cortes el RTF debe ser</span><span class="v">≤ 1</span></div>
         </div>
         <ol class="roadmap">
-          <li class="now"><span class="when">ahora</span><span>Spike T-000 y q4 medidos: en el navegador MOSS aún no es fluido</span></li>
-          <li><span class="when">0.1.0</span><span>Detección, lectura con pausa y progreso, <span class="mono">moss-server</span> y voz del sistema</span></li>
-          <li><span class="when">0.2.0</span><span>Resaltado, velocidad y voces; <span class="mono">moss-browser</span> si se logra RTF ≤ 1</span></li>
-          <li><span class="when">0.3.0</span><span>Temas, inserción automática, ejemplos por framework</span></li>
+          <li class="now"><span class="when">0.1.0</span><span>Publicado: detección, lectura, <span class="mono">moss-server</span>, voz del sistema, resaltado, velocidad y voz, Media Session, i18n y accesibilidad</span></li>
+          <li><span class="when">después</span><span><span class="mono">article-voice/auto</span>, tematización y partes, y un sitio de demostración</span></li>
+          <li><span class="when">experimental</span><span><span class="mono">moss-browser</span> si llega a RTF ≤ 0,8 (WASM) o ≤ 0,5 (WebGPU)</span></li>
           <li><span class="when">1.0.0</span><span>Contrato estable y accesibilidad AA verificada</span></li>
         </ol>
       </div>
@@ -388,12 +460,13 @@ footer .row { display: flex; flex-wrap: wrap; gap: 21px; justify-content: space-
 
   <section class="band" id="preguntas">
     <div class="wrap">
-      <div class="sec-head"><span class="label">Preguntas</span><h2>Lo que suelen preguntar</h2></div>
+      <div class="sec-head"><span class="label">07 · Preguntas</span><h2>Lo que suelen preguntar</h2></div>
       <div class="faqs">
-        <details class="faq"><summary>¿Cuánto pesa?</summary><p>El script que carga tu página pesa menos de 15 kB. Con <span class="mono">moss-server</span> el visitante no descarga ningún modelo, solo el audio. Si activas el experimental <span class="mono">moss-browser</span>, el modelo (≈ 728 MiB; ≈ 168 MiB la q4, solo WebGPU) se descarga aparte, solo si pulsa play y acepta, y queda en la caché.</p></details>
-        <details class="faq"><summary>¿En qué idiomas lee?</summary><p>MOSS-TTS-Nano habla 20 idiomas. La versión 1 prepara el texto con cuidado en español e inglés; los demás funcionan con una preparación más simple.</p></details>
+        <details class="faq"><summary>¿Cómo lo instalo?</summary><p>Con un bundler: <span class="mono">npm install article-voice</span> e <span class="mono">import 'article-voice'</span>. Sin bundler: carga <span class="mono">https://cdn.jsdelivr.net/npm/article-voice@0.1/dist/index.js</span> como módulo ES y usa <span class="mono">&lt;article-voice&gt;</span>. La 0.1.0 está publicada en npm.</p></details>
+        <details class="faq"><summary>¿Cuánto pesa?</summary><p>El script pesa ≈ 28 kB gzip (≈ 100 kB sin comprimir). Con <span class="mono">moss-server</span> el visitante no descarga ningún modelo, solo el audio. Si activas el experimental <span class="mono">moss-browser</span>, el modelo (≈ 728 MiB; ≈ 168 MiB la q4, solo WebGPU) se descarga aparte, solo si pulsa play y acepta, y queda en la caché.</p></details>
+        <details class="faq"><summary>¿En qué idiomas lee?</summary><p>MOSS-TTS-Nano habla 20 idiomas. La versión 0.1.0 prepara el texto con cuidado en español e inglés; los demás funcionan con una preparación más simple.</p></details>
         <details class="faq"><summary>¿Qué navegadores soporta?</summary><p>Chrome, Edge y Firefox en sus dos últimas versiones y Safari 17 o posterior. Con <span class="mono">moss-server</span> basta cualquiera que reproduzca audio; la voz del sistema depende de la API Web Speech del navegador. <span class="mono">moss-browser</span> pide WebGPU o WebAssembly y, hoy, un equipo potente.</p></details>
-        <details class="faq"><summary>¿De verdad corre sin servidores?</summary><p>No, todavía. El camino recomendado necesita un servidor con MOSS. Se probó correrlo en el navegador y no llega a tiempo real (RTF 1,85 en el mejor caso, 5,5 con la q4). Se investiga cómo acelerarlo; hasta entonces es experimental y <span class="mono">engine="auto"</span> no lo elige.</p></details>
+        <details class="faq"><summary>¿De verdad corre sin servidores?</summary><p>No, todavía. El camino recomendado necesita un servidor con MOSS. Se probó correrlo en el navegador y no llega a tiempo real (RTF 1,18 en el mejor caso con worker, 3,02 con la q4 y KV en GPU). Se investiga cómo acelerarlo; hasta entonces es experimental y <span class="mono">engine="auto"</span> no lo elige.</p></details>
         <details class="faq"><summary>¿Las voces imitan a personas reales?</summary><p>No. El paquete no incluye voces clonadas de personas o personajes reconocibles. Las voces se grabarán con el consentimiento de quien presta su voz.</p></details>
         <details class="faq"><summary>¿Es oficial de OpenMOSS?</summary><p>No. Es un proyecto independiente que usa el modelo MOSS-TTS-Nano, publicado por OpenMOSS bajo licencia Apache-2.0, con su atribución.</p></details>
       </div>
@@ -403,7 +476,7 @@ footer .row { display: flex; flex-wrap: wrap; gap: 21px; justify-content: space-
 
 <footer>
   <div class="wrap">
-    <div class="row"><span class="brand"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>article-voice</span><span>Licencia MIT · <a href="https://github.com/MoiBaldenegro/article-voice">github.com/MoiBaldenegro/article-voice</a></span></div>
+    <div class="row"><span class="brand"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>article-voice</span><span>Licencia MIT · <a href="https://www.npmjs.com/package/article-voice">npm</a> · <a href="https://github.com/MoiBaldenegro/article-voice">github.com/MoiBaldenegro/article-voice</a></span></div>
     <p>Usa MOSS-TTS-Nano de OpenMOSS Team (Fudan University, SII y MOSI), Apache-2.0. Los pesos se descargan de su repositorio de origen. Diseño: MXVI design system.</p>
   </div>
 </footer>
@@ -603,9 +676,10 @@ footer .row { display: flex; flex-wrap: wrap; gap: 21px; justify-content: space-
 
   // Pestañas de integración
   const examples = {
-    'HTML': `<script type="module" src="https://cdn.jsdelivr.net/npm/article-voice@1/dist/cdn/article-voice.js"><\/script>\n\n<article-voice></article-voice>\n<article>…tu artículo…</article>`,
+    'HTML': `<script type="module" src="https://cdn.jsdelivr.net/npm/article-voice@0.1/dist/index.js"><\/script>\n\n<article-voice server-url="https://tts.tu-sitio.com"></article-voice>\n<article>…tu artículo…</article>`,
+    'npm': `npm install article-voice\n\nimport 'article-voice';\n\n<article-voice server-url="https://tts.tu-sitio.com"></article-voice>`,
     'React': `import 'article-voice';\n\nexport function Post({ post }) {\n  return (\n    <>\n      <article-voice for="post-body" />\n      <article id="post-body">{post.content}</article>\n    </>\n  );\n}`,
-    'Vue': `<script setup>\nimport 'article-voice';\n<\/script>\n\n<template>\n  <article-voice target=".entry-content" />\n  <div class="entry-content" v-html="post.html" />\n</template>`,
+    'Vue': `<script setup>\nimport 'article-voice';\n<\/script>\n\n<template>\n  <article-voice for="post-body" />\n  <div id="post-body" v-html="post.html" />\n</template>`,
     'Svelte': `<script>\n  import 'article-voice';\n  export let post;\n<\/script>\n\n<article-voice for="post" lang="es" />\n<article id="post">{@html post.html}</article>`,
     'Astro': `---\nimport 'article-voice';\n---\n<article-voice server-url="https://tts.tu-sitio.com" />\n<article><slot /></article>`,
     'Tema': `article-voice {\n  --av-accent: #0a7c66;\n  --av-surface: #ffffff;\n  --av-text: #1b1b1b;\n  --av-font: "Inter", sans-serif;\n}\n\narticle-voice::part(play) {\n  border-width: 2px;\n}`,

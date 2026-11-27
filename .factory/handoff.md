@@ -1,8 +1,7 @@
 # Handoff
 
-- #49: prueba E2E de moss-server con pesos reales hecha y VERDE (`pnpm test:moss-real`, scripts/moss-e2e/{run.mjs,moss_upstream.py}).
-  - Pesos ya estaban en spikes/t000-moss-browser/models (si faltan, run.mjs los descarga con el manifest). Python: venv del spike.
-  - Resultado en CPU: es 12,8 s de audio en 6,08 s (RTF 0,48); en 9,12 s en 4,06 s (RTF 0,45); PCM 16-bit mono 48 kHz válido. Chromium con examples/html: playing, avanza segmento 0→1, resalta, sin fallback. Documentado en docs/07-operacion/moss-server.md §7.
-  - Cambios menores: examples/html ahora tiene >120 palabras (antes no se detectaba el artículo); eslint ignora scripts/moss-e2e.
-  - No hay bugs encontrados. Una sola medición por idioma (orientativa).
-- Siguiente paso: opcional, medir RTF con ≥3 repeticiones y con varias peticiones concurrentes; no está en CI (requiere pesos de ~GB).
+- #53: landing actualizada y verificada. `pnpm verify` en verde (26 suites, 359 pruebas) y `pnpm test:landing` en verde (5 pruebas).
+  - Archivos tocados: `docs/04-diseno/ui/landing/landing.html`, `docs/04-diseno/ui/landing/README.md`, `test/landing/landing.pw.ts`.
+  - CDN real anunciado: `https://cdn.jsdelivr.net/npm/article-voice@0.1/dist/index.js` (npm `0.1.0` publicado). Ya no se anuncia `@1/dist/cdn` ni el entrypoint `auto`.
+  - Se añadió sección «Qué incluye la 0.1.0», banner de publicación, roadmap actualizado y cifras RTF de T-035; se corrigió el tamaño del script (≈28 kB gzip). Fix de scroll horizontal en móvil con `.hero > * { min-width: 0; }`.
+- Siguiente paso concreto: el README raíz aún dice «pre-lanzamiento / el paquete aún no se ha publicado en npm» (desactualizado) y el contrato promete un atributo `target` que no está en `observedAttributes`. Abordar esos dos puntos (ver nextIssues del resultado).
