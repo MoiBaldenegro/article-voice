@@ -1,7 +1,6 @@
 # Handoff
 
-- #53: landing actualizada y verificada. `pnpm verify` en verde (26 suites, 359 pruebas) y `pnpm test:landing` en verde (5 pruebas).
-  - Archivos tocados: `docs/04-diseno/ui/landing/landing.html`, `docs/04-diseno/ui/landing/README.md`, `test/landing/landing.pw.ts`.
-  - CDN real anunciado: `https://cdn.jsdelivr.net/npm/article-voice@0.1/dist/index.js` (npm `0.1.0` publicado). Ya no se anuncia `@1/dist/cdn` ni el entrypoint `auto`.
-  - Se añadió sección «Qué incluye la 0.1.0», banner de publicación, roadmap actualizado y cifras RTF de T-035; se corrigió el tamaño del script (≈28 kB gzip). Fix de scroll horizontal en móvil con `.hero > * { min-width: 0; }`.
-- Siguiente paso concreto: el README raíz aún dice «pre-lanzamiento / el paquete aún no se ha publicado en npm» (desactualizado) y el contrato promete un atributo `target` que no está en `observedAttributes`. Abordar esos dos puntos (ver nextIssues del resultado).
+- #54 (CI en rojo: Landing/GitHub Pages): `deploy-pages` falló con «Multiple artifacts named "github-pages"… count is 2». El workflow solo sube un artefacto, así que el segundo vino de un intento anterior de la misma corrida (re-run): los artefactos de intentos previos siguen visibles.
+  - Fix en `.github/workflows/pages.yml`: artefacto `github-pages-${{ github.run_attempt }}` en `upload-pages-artifact` y el mismo `artifact_name` en `deploy-pages`. No se saltó ni desactivó ningún paso.
+  - Verificado: Prettier OK en el workflow. No se pudo correr en Actions desde aquí (sin actionlint ni gh).
+- Siguiente paso concreto: tras publicar, confirmar que la corrida «Landing (GitHub Pages)» de main queda en verde; si vuelve a fallar en el primer intento, revisar si otro job/workflow sube `github-pages`. Pendiente aparte: #52 (landing móvil).

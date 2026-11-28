@@ -29,8 +29,14 @@ jobs:
       - uses: actions/checkout@v7
       - run: sh scripts/build-landing.sh _site
       - uses: actions/configure-pages@v6
+      # Los artefactos de intentos anteriores siguen en la misma corrida: si se
+      # re-ejecuta, deploy-pages encontraría dos «github-pages» y fallaría.
+      # Un nombre por intento lo evita.
       - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
+          name: github-pages-${{ github.run_attempt }}
       - id: deployment
         uses: actions/deploy-pages@v5
+        with:
+          artifact_name: github-pages-${{ github.run_attempt }}
